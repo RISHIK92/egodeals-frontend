@@ -1,4 +1,14 @@
-import { Camera, Clock, MapPin, Bookmark } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import {
+  Camera,
+  Clock,
+  MapPin,
+  Bookmark,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 
 export default function RandomListingsSection() {
   const listings = [
@@ -65,26 +75,26 @@ export default function RandomListingsSection() {
   ];
 
   return (
-    <div className="py-16 px-4 bg-gray-50">
+    <div className="py-16 px-4 bg-gradient-to-b from-[#F8F9FA] to-[#EDF0F2]">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="flex justify-between items-center mb-10">
+          <h2 className="text-3xl font-bold text-gray-800">
             Randomly Selected{" "}
-            <span className="font-normal text-gray-600">Listings</span>
+            <span className="font-normal text-teal-700">Listings</span>
           </h2>
           <a
             href="#"
-            className="text-pink-500 hover:text-pink-600 flex items-center"
+            className="text-teal-700 hover:text-teal-800 flex items-center font-semibold bg-white px-4 py-2 rounded-full shadow-sm transition"
           >
-            VIEW MORE <span className="ml-1">≡</span>
+            VIEW MORE <ChevronRight className="ml-1 h-4 w-4" />
           </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {listings.map((listing) => (
             <div
               key={listing.id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden"
+              className="bg-white rounded-2xl shadow-md overflow-hidden border border-white/50 hover:shadow-lg transition transform hover:-translate-y-1"
             >
               {/* Image */}
               <div className="relative">
@@ -93,20 +103,21 @@ export default function RandomListingsSection() {
                   alt={listing.title}
                   className="w-full h-48 object-cover"
                 />
-                <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded-md flex items-center">
+                <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-lg flex items-center">
                   <Camera className="h-4 w-4 mr-1" />
                   <span className="text-xs">{listing.images}</span>
                 </div>
+                <div className="absolute top-0 left-0 bg-gradient-to-r from-[#EC5944] to-transparent w-1/3 h-1" />
               </div>
 
-              <div className="px-4 py-3">
-                <h3 className="font-bold text-gray-900 mb-2">
+              <div className="px-5 py-4">
+                <h3 className="font-bold text-gray-800 mb-2 line-clamp-1">
                   {listing.title}
                 </h3>
 
-                <div className="flex items-start mb-1">
-                  <div className="bg-gray-200 text-xs w-6 h-6 rounded-full flex items-center justify-center mr-2 mt-0.5">
-                    <span>P</span>
+                <div className="flex items-start mb-3">
+                  <div className="bg-teal-700 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                    <span>{listing.title.charAt(0)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center text-gray-500 text-xs">
@@ -114,7 +125,7 @@ export default function RandomListingsSection() {
                       <span>{listing.date}</span>
                     </div>
                     <div className="flex flex-wrap items-center mt-1">
-                      <span className="text-pink-500 text-xs font-medium">
+                      <span className="text-[#EC5944] text-xs font-medium">
                         {listing.category}
                       </span>
                       {listing.subcategory && (
@@ -134,17 +145,58 @@ export default function RandomListingsSection() {
                 </div>
 
                 {/* Contact Button */}
-                <div className="flex justify-between items-center mt-2">
-                  <button className="text-blue-600 text-sm font-medium">
+                <div className="flex justify-between items-center mt-3">
+                  <button className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
                     Contact us
                   </button>
-                  <button className="text-gray-500">
-                    <Bookmark className="h-4 w-4" />
+                  <button className="text-gray-400 hover:text-[#EC5944] transition">
+                    <Bookmark className="h-5 w-5" />
                   </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 bg-white rounded-2xl shadow-xl overflow-hidden border border-white/50 p-6">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              Find More Listings
+            </h3>
+            <p className="text-gray-600">
+              Discover services and businesses in your area
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row bg-gray-50 rounded-xl overflow-hidden">
+            <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-100">
+              <div className="flex items-center gap-3">
+                <Search className="h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search Keyword..."
+                  className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-100">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search Location..."
+                  className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="bg-teal-700 hover:bg-teal-800 transition p-3 flex items-center justify-center">
+              <button className="text-white font-medium flex items-center whitespace-nowrap">
+                <Search className="h-5 w-5 mr-2" /> Search
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

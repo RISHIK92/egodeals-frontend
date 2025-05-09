@@ -109,14 +109,10 @@ export default function CategorySection() {
     <div className="py-20 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
-          <p className="text-pink-500 font-medium mb-2">CATEGORIES</p>
+          <p className="text-[#186667] font-medium mb-2">CATEGORIES</p>
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Explore by Category
           </h2>
-          <p className="text-gray-500 max-w-2xl mx-auto">
-            Lorem ipsum dolor sit amet consectetur adipisicing sed do eiusmod
-            tempor incididunt labore dolore magna aliqua enim.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -129,18 +125,18 @@ export default function CategorySection() {
               <h3 className="font-bold text-gray-900 text-lg mb-2 text-center">
                 {category.name}
               </h3>
-              <div className="bg-gray-100 text-gray-500 rounded-full px-4 py-1 text-sm">
+              <div className="bg-gray-200 text-gray-600 font-medium rounded-full px-4 py-2 text-sm">
                 {category.count}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="flex justify-center mt-12">
+        {/* <div className="flex justify-center mt-12">
           <button className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-3 rounded-full shadow-md hover:shadow-lg transition-all">
             All Categories
           </button>
-        </div>
+        </div> */}
 
         {/* <div className="fixed bottom-6 right-6">
           <button className="bg-pink-500 p-3 rounded-md shadow-md hover:bg-pink-600 transition-colors">

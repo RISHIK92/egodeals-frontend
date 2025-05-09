@@ -11,9 +11,10 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <FullWidthBanner
-        image={"https://egodeals.com/data/banners/1737541263.png"}
+      // image={"https://egodeals.com/data/banners/1737541263.png"}
       />
       <CategorySection />
+      <FullWidthBanner />
       <RandomListingsSection />
     </>
   );

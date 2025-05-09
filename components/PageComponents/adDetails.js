@@ -15,7 +15,6 @@ const AdDetails = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* Title and price */}
       <div className="bg-white p-6 rounded-lg card-shadow">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -47,7 +46,6 @@ const AdDetails = ({
         </div>
       </div>
 
-      {/* Details and categories */}
       <div className="bg-white p-6 rounded-lg card-shadow">
         <h2 className="text-xl font-semibold mb-4">Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
