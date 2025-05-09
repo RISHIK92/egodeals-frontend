@@ -16,6 +16,7 @@ import {
   Star,
 } from "lucide-react";
 import Navbar from "@/components/Navbar/navbar";
+import { useRouter } from "next/navigation";
 
 export default function ProfessionalListings() {
   const [listings, setListings] = useState([]);
@@ -168,13 +169,12 @@ export default function ProfessionalListings() {
   const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const goToFirstPage = () => setCurrentPage(1);
   const goToLastPage = () => setCurrentPage(totalPages);
+  const router = useRouter();
 
   return (
     <>
-      {/* <Navbar /> */}
       <div className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Discover Local Businesses
@@ -184,10 +184,8 @@ export default function ProfessionalListings() {
             </p>
           </div>
 
-          {/* Search and Filters */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row gap-4 mb-4">
-              {/* Enhanced Search Bar */}
               <div className="relative flex-1 group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400 group-focus-within:text-teal-500 transition-colors" />
@@ -209,7 +207,6 @@ export default function ProfessionalListings() {
                 )}
               </div>
 
-              {/* Mobile Filter Button - Enhanced */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="md:hidden flex items-center justify-center gap-2 px-4 py-3.5 border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors"
@@ -228,7 +225,6 @@ export default function ProfessionalListings() {
               </button>
             </div>
 
-            {/* Filter Row - shown on mobile when toggled */}
             <div
               className={`${
                 showFilters ? "block" : "hidden"
@@ -276,7 +272,6 @@ export default function ProfessionalListings() {
             </div>
           </div>
 
-          {/* Results Count */}
           <div className="mb-6 flex justify-between items-center">
             <p className="text-sm text-gray-600">
               Showing{" "}
@@ -289,16 +284,17 @@ export default function ProfessionalListings() {
             </p>
           </div>
 
-          {/* Listings Grid */}
           {currentItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {currentItems.map((listing) => (
                 <div
                   key={listing.id}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-200"
+                  className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer"
                 >
-                  {/* Image */}
-                  <div className="relative h-48">
+                  <div
+                    className="relative h-48"
+                    onClick={() => router.push(`/page/${listing.id}`)}
+                  >
                     <img
                       src={listing.imageSrc}
                       alt={listing.title}
@@ -310,10 +306,12 @@ export default function ProfessionalListings() {
                     </div>
                   </div>
 
-                  {/* Content */}
                   <div className="p-5">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
+                      <h3
+                        className="font-semibold text-lg text-gray-900 line-clamp-1"
+                        onClick={() => router.push(`/page/${listing.id}`)}
+                      >
                         {listing.title}
                       </h3>
                       <button className="text-gray-400 hover:text-rose-500 transition-colors">
@@ -321,7 +319,7 @@ export default function ProfessionalListings() {
                       </button>
                     </div>
 
-                    <div className="flex items-center mb-3">
+                    {/* <div className="flex items-center mb-3">
                       <div className="flex items-center mr-2">
                         {[...Array(5)].map((_, i) => (
                           <Star
@@ -337,14 +335,20 @@ export default function ProfessionalListings() {
                       <span className="text-sm text-gray-600">
                         {listing.rating} ({listing.reviews} reviews)
                       </span>
-                    </div>
+                    </div> */}
 
-                    <div className="flex items-center text-sm text-gray-500 mb-3">
+                    <div
+                      className="flex items-center text-sm text-gray-500 mb-3"
+                      onClick={() => router.push(`/page/${listing.id}`)}
+                    >
                       <MapPin className="h-4 w-4 mr-1 text-gray-400" />
                       <span>{listing.location}</span>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div
+                      className="flex flex-wrap gap-2 mb-4"
+                      onClick={() => router.push(`/page/${listing.id}`)}
+                    >
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                         {listing.category}
                       </span>
@@ -355,7 +359,10 @@ export default function ProfessionalListings() {
                       )}
                     </div>
 
-                    <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    <button
+                      className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                      onClick={() => router.push(`/page/${listing.id}`)}
+                    >
                       Contact Business
                     </button>
                   </div>
@@ -384,7 +391,6 @@ export default function ProfessionalListings() {
             </div>
           )}
 
-          {/* Pagination */}
           {filteredListings.length > itemsPerPage && (
             <div className="flex items-center justify-between border-t border-gray-200 pt-6">
               <button

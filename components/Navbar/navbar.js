@@ -14,7 +14,7 @@ export default function Navbar() {
     setActiveItem(item);
     const path = item === "Home" ? "/" : `/${item.toLowerCase()}`;
     router.push(path);
-    setMobileMenuOpen(false); // Close mobile menu after navigation
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -33,7 +33,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex gap-8">
           {navItems.map((item) => (
             <div
@@ -59,12 +58,14 @@ export default function Navbar() {
           >
             Login
           </button>
-          <button className="hidden md:flex bg-[#186667] hover:bg-teal-800 text-white px-5 py-2 rounded-full items-center">
+          <button
+            className="hidden md:flex bg-[#186667] hover:bg-teal-800 text-white px-5 py-2 rounded-full items-center cursor-pointer"
+            onClick={() => router.push("/create-listing")}
+          >
             <Edit className="h-4 w-4 mr-2" />
             List your business
           </button>
 
-          {/* Mobile menu button */}
           <button
             className="md:hidden text-gray-700 hover:text-teal-700"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -74,7 +75,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed top-20 left-0 right-0 bg-white shadow-lg z-40 md:hidden">
           <div className="flex flex-col px-6 py-4 space-y-4">
@@ -103,7 +103,10 @@ export default function Navbar() {
               >
                 Login
               </button>
-              <button className="w-full bg-[#186667] hover:bg-teal-800 text-white px-5 py-3 rounded-full flex items-center justify-center">
+              <button
+                className="w-full bg-[#186667] hover:bg-teal-800 text-white px-5 py-3 rounded-full flex items-center justify-center cursor-pointer"
+                onClick={() => router.push("/create-listing")}
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 List your business
               </button>

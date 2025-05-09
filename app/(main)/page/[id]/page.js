@@ -1,10 +1,8 @@
 import React from "react";
-// import Header from "@/components/Header";
 import ImageGallery from "@/components/PageComponents/imageGallery";
 import AdDetails from "@/components/PageComponents/adDetails";
 import SellerCard from "@/components/PageComponents/sellerCard";
 import SimilarAds from "@/components/PageComponents/similarAds";
-// import Footer from "@/components/Footer";
 import ProductDescription from "@/components/PageComponents/productDescription";
 import ProductFeatures from "@/components/PageComponents/productFeatures";
 import LocationMap from "@/components/PageComponents/locationMap";
