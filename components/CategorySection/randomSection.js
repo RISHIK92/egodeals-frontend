@@ -83,7 +83,7 @@ export default function RandomListingsSection() {
             <span className="font-normal text-teal-700">Listings</span>
           </h2>
           <a
-            href="#"
+            href="/businesses"
             className="text-teal-700 hover:text-teal-800 flex items-center font-semibold bg-white px-4 py-2 rounded-full shadow-sm transition"
           >
             VIEW MORE <ChevronRight className="ml-1 h-4 w-4" />

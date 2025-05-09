@@ -79,7 +79,7 @@ export default function Page() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col mt-24">
+    <div className="min-h-screen flex flex-col lg:px-20">
       {/* <Header /> */}
       {/* <Navbar /> */}
       <div className="relative h-80 bg-gray-800 overflow-hidden">
