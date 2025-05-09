@@ -8,7 +8,7 @@ import RandomListingsSection from "@/components/CategorySection/randomSection";
 export default function Home() {
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <HeroSection />
       <FullWidthBanner
       // image={"https://egodeals.com/data/banners/1737541263.png"}

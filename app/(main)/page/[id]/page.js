@@ -81,7 +81,7 @@ export default function Page() {
   return (
     <div className="min-h-screen flex flex-col mt-24">
       {/* <Header /> */}
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="relative h-80 bg-gray-800 overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"

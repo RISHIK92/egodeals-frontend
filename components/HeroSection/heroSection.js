@@ -7,7 +7,7 @@ export default function HeroSection() {
 
   return (
     <div
-      className="relative w-full overflow-hidden mt-20 bg-gradient-to-b from-[#EC5944] to-[#FFAEA2]"
+      className="relative w-full overflow-hidden bg-gradient-to-b from-[#EC5944] to-[#FFAEA2]"
       style={{ height: "600px" }}
     >
       <div
