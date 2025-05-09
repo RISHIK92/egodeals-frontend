@@ -49,7 +49,10 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="text-teal-700 font-medium hover:text-teal-800">
+        <button
+          className="text-teal-700 font-medium hover:text-teal-800 cursor-pointer"
+          onClick={() => router.push("/login")}
+        >
           Login
         </button>
         <button className="bg-[#186667] hover:bg-teal-800 text-white px-5 py-2 rounded-full flex items-center">
