@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -13,6 +14,8 @@ export default function Register() {
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,9 +24,48 @@ export default function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setError("");
+
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      console.log("Registration successful:", data);
+      router.push("/login");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,7 +88,13 @@ export default function Register() {
             </a>
           </p>
 
-          <div className="space-y-4">
+          {error && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <input
@@ -55,6 +103,7 @@ export default function Register() {
                   placeholder="First name"
                   value={formData.firstName}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
@@ -65,6 +114,7 @@ export default function Register() {
                   placeholder="Last name"
                   value={formData.lastName}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
@@ -77,6 +127,7 @@ export default function Register() {
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -112,6 +163,7 @@ export default function Register() {
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
@@ -122,16 +174,18 @@ export default function Register() {
                   placeholder="Confirm Password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
             </div>
 
             <button
-              onClick={handleSubmit}
-              className="w-full bg-teal-700 text-white font-medium py-3 px-4 rounded-md hover:bg-teal-800 transition duration-300"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-teal-700 text-white font-medium py-3 px-4 rounded-md hover:bg-teal-800 transition duration-300 disabled:opacity-50"
             >
-              Register Now
+              {loading ? "Processing..." : "Register Now"}
             </button>
 
             <p className="text-gray-600 text-sm mt-4">
@@ -144,7 +198,7 @@ export default function Register() {
                 Privacy Policy
               </a>
             </p>
-          </div>
+          </form>
         </div>
       </div>
 

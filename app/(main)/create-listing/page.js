@@ -17,6 +17,7 @@ import {
   Bookmark,
   Camera,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -32,11 +33,26 @@ export default function CreateListing() {
     city: "",
     tags: [],
     currentTag: "",
-    email: "rishik3555@gmail.com",
-    phone: "9160303112",
+    highlights: [],
+    currentHighlight: "",
+    email: "",
+    phone: "",
     hidePhone: false,
     photos: [],
     pricingOption: "Free",
+    phone: "",
+    website: "",
+    businessHours: {
+      weekdays: { open: "9:00 AM", close: "6:00 PM" },
+      saturday: { open: "10:00 AM", close: "4:00 PM" },
+      sunday: { open: "", close: "" },
+    },
+    businessCategory: "",
+    establishedYear: "",
+    serviceArea: "",
+    teamSize: "",
+    rating: "",
+    reviewCount: "",
   });
 
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -45,44 +61,48 @@ export default function CreateListing() {
   const [cityFilter, setCityFilter] = useState("");
   const [currentSection, setCurrentSection] = useState("details");
   const [isSuccess, setIsSuccess] = useState(false);
-  const categoryRef = useRef(null);
-  const cityRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [user, setUser] = useState(null);
+  const fileInputRef = useRef(null);
 
-  // Sample data with more items
-  const categories = [
-    "Aerobic Classes",
-    "Yoga Instruction",
-    "Personal Training",
-    "Dance Lessons",
-    "Martial Arts",
-    "Swimming Coaching",
-    "Pilates",
-    "Zumba",
-    "CrossFit",
-    "Boxing",
-    "Gymnastics",
-    "Cycling",
-    "Bootcamp",
-    "Barre",
-    "HIIT",
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesRes, citiesRes, userRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`),
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/cities`),
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/check-auth`, {
+            credentials: "include",
+          }),
+        ]);
 
-  const cities = [
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Miami",
-    "San Francisco",
-    "Seattle",
-    "Boston",
-    "Denver",
-    "Atlanta",
-    "Phoenix",
-    "Philadelphia",
-  ];
+        const categoriesData = await categoriesRes.json();
+        const citiesData = await citiesRes.json();
+        const userData = await userRes.json();
 
-  // Filtered lists
+        setCategories(categoriesData);
+        setCities(citiesData);
+        setUser(userData.user);
+
+        // Pre-fill user data if available
+        if (userData.user) {
+          setFormData((prev) => ({
+            ...prev,
+            email: userData.user.email || "",
+            phone: userData.user.phone || "",
+            city: userData.user.city || "",
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
   const filteredCategories = categories.filter((cat) =>
     cat.toLowerCase().includes(categoryFilter.toLowerCase())
   );
@@ -91,7 +111,6 @@ export default function CreateListing() {
     city.toLowerCase().includes(cityFilter.toLowerCase())
   );
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
@@ -105,7 +124,9 @@ export default function CreateListing() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Custom Dropdown Components
+  const categoryRef = useRef(null);
+  const cityRef = useRef(null);
+
   const CategoryDropdown = () => (
     <div
       ref={categoryRef}
@@ -210,6 +231,22 @@ export default function CreateListing() {
     }
   };
 
+  const handleHighlightKeyDown = (e) => {
+    if (["Enter", ","].includes(e.key)) {
+      e.preventDefault();
+      if (formData.currentHighlight.trim() && formData.highlights.length < 10) {
+        const highlight = formData.currentHighlight.trim();
+        if (highlight.length >= 5 && highlight.length <= 50) {
+          setFormData((prev) => ({
+            ...prev,
+            highlights: [...prev.highlights, highlight],
+            currentHighlight: "",
+          }));
+        }
+      }
+    }
+  };
+
   const removeTag = (index) => {
     setFormData((prev) => ({
       ...prev,
@@ -217,17 +254,32 @@ export default function CreateListing() {
     }));
   };
 
-  const handlePhotoUpload = (e) => {
+  const removeHighlight = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length + formData.photos.length > 5) {
       alert("You can upload maximum 5 photos");
       return;
     }
-    const newPhotos = files.map((file) => URL.createObjectURL(file));
-    setFormData((prev) => ({
-      ...prev,
-      photos: [...prev.photos, ...newPhotos],
-    }));
+
+    setIsLoading(true);
+    try {
+      setFormData((prev) => ({
+        ...prev,
+        photos: [...prev.photos, ...files],
+      }));
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError("Failed to process images");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const removePhoto = (index) => {
@@ -237,9 +289,91 @@ export default function CreateListing() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSuccess(true);
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // First upload photos if any
+      let uploadedPhotoUrls = [];
+      if (formData.photos.length > 0) {
+        const uploadFormData = new FormData();
+        formData.photos.forEach((file) => {
+          uploadFormData.append("photos", file);
+        });
+
+        const uploadResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
+          {
+            method: "POST",
+            body: uploadFormData,
+            credentials: "include",
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Photo upload failed");
+        }
+
+        const uploadData = await uploadResponse.json();
+        uploadedPhotoUrls = uploadData.urls;
+      }
+
+      const listingData = {
+        category: formData.category,
+        type: formData.type,
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        negotiable: formData.negotiable,
+        city: formData.city,
+        tags: formData.tags,
+        highlights: formData.highlights,
+        email: formData.email,
+        phone: formData.phone,
+        hidePhone: formData.hidePhone,
+        pricingOption: formData.pricingOption,
+        photos: uploadedPhotoUrls,
+        website: formData.website, // Added website field
+        businessHours: formData.businessHours, // Added businessHours field
+        businessCategory: formData.businessCategory,
+        establishedYear: formData.establishedYear
+          ? parseInt(formData.establishedYear)
+          : null,
+        serviceArea: formData.serviceArea,
+        teamSize: formData.teamSize,
+        rating: formData.rating ? parseFloat(formData.rating) : null,
+        reviewCount: formData.reviewCount
+          ? parseInt(formData.reviewCount)
+          : null,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(listingData),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create listing");
+      }
+
+      const result = await response.json();
+      setIsSuccess(true);
+    } catch (err) {
+      console.error("Submission error:", err);
+      setError(err.message || "Failed to create listing");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isSuccess) {
@@ -403,9 +537,11 @@ export default function CreateListing() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 required
+                minLength={10}
+                maxLength={100}
               />
               <p className="mt-1 text-sm text-gray-500">
-                A great title needs at least 60 characters.
+                A great title needs at least 10 characters (max 100).
               </p>
             </div>
 
@@ -423,7 +559,12 @@ export default function CreateListing() {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 required
+                minLength={50}
+                maxLength={2000}
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Minimum 50 characters, maximum 2000 characters.
+              </p>
             </div>
 
             {/* Price Field */}
@@ -443,6 +584,8 @@ export default function CreateListing() {
                   onChange={(e) =>
                     setFormData({ ...formData, price: e.target.value })
                   }
+                  min="0"
+                  step="0.01"
                 />
               </div>
               <div className="mt-2 flex items-center">
@@ -540,6 +683,199 @@ export default function CreateListing() {
                 exceed 15. And each tag can only be 2 to 30 characters long.
               </p>
             </div>
+            {/* Business Details Section */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Business Details
+              </h3>
+
+              {/* Phone */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Phone
+                </label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Website */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.website}
+                  onChange={(e) =>
+                    setFormData({ ...formData, website: e.target.value })
+                  }
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              {/* Business Hours */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Hours
+                </label>
+                <div className="space-y-3">
+                  {/* Weekdays */}
+                  <div className="flex items-center space-x-2">
+                    <span className="w-24 text-gray-600">Monday-Friday:</span>
+                    <input
+                      type="time"
+                      className="border rounded p-2"
+                      value={formData.businessHours.weekdays.open}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessHours: {
+                            ...formData.businessHours,
+                            weekdays: {
+                              ...formData.businessHours.weekdays,
+                              open: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                    <span>to</span>
+                    <input
+                      type="time"
+                      className="border rounded p-2"
+                      value={formData.businessHours.weekdays.close}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessHours: {
+                            ...formData.businessHours,
+                            weekdays: {
+                              ...formData.businessHours.weekdays,
+                              close: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  {/* Saturday */}
+                  <div className="flex items-center space-x-2">
+                    <span className="w-24 text-gray-600">Saturday:</span>
+                    <input
+                      type="time"
+                      className="border rounded p-2"
+                      value={formData.businessHours.saturday.open}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessHours: {
+                            ...formData.businessHours,
+                            saturday: {
+                              ...formData.businessHours.saturday,
+                              open: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                    <span>to</span>
+                    <input
+                      type="time"
+                      className="border rounded p-2"
+                      value={formData.businessHours.saturday.close}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessHours: {
+                            ...formData.businessHours,
+                            saturday: {
+                              ...formData.businessHours.saturday,
+                              close: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  {/* Sunday */}
+                  <div className="flex items-center space-x-2">
+                    <span className="w-24 text-gray-600">Sunday:</span>
+                    <select
+                      className="border rounded p-2"
+                      value={
+                        formData.businessHours.sunday.open ? "open" : "closed"
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessHours: {
+                            ...formData.businessHours,
+                            sunday:
+                              e.target.value === "open"
+                                ? { open: "10:00 AM", close: "2:00 PM" }
+                                : { open: "", close: "" },
+                          },
+                        })
+                      }
+                    >
+                      <option value="closed">Closed</option>
+                      <option value="open">Open</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Highlights Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Key Features/Highlights
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2 p-2 border border-gray-300 rounded-lg min-h-12">
+                {formData.highlights.map((highlight, index) => (
+                  <div
+                    key={index}
+                    className="inline-flex items-center bg-blue-100 px-2 py-1 rounded-full text-sm"
+                  >
+                    {highlight}
+                    <button
+                      type="button"
+                      onClick={() => removeHighlight(index)}
+                      className="ml-1 text-blue-500 hover:text-blue-700"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+                <input
+                  type="text"
+                  value={formData.currentHighlight}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      currentHighlight: e.target.value,
+                    })
+                  }
+                  onKeyDown={handleHighlightKeyDown}
+                  className="flex-1 min-w-[100px] outline-none"
+                  placeholder="Add key features..."
+                />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                List the key features or benefits of your service (e.g., "Free
+                consultation", "10+ years experience"). Press Enter after each
+                feature.
+              </p>
+            </div>
 
             {/* Seller Information */}
             <div className="pt-4 border-t border-gray-200">
@@ -566,6 +902,113 @@ export default function CreateListing() {
                   />
                 </div>
               </div>
+              {/* Business Category */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Category
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.businessCategory}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      businessCategory: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Consulting, Retail, IT Services"
+                />
+              </div>
+
+              {/* Established Year */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Established Year
+                </label>
+                <input
+                  type="number"
+                  min="1900"
+                  max={new Date().getFullYear()}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.establishedYear}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      establishedYear: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., 2010"
+                />
+              </div>
+
+              {/* Service Area */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Service Area
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.serviceArea}
+                  onChange={(e) =>
+                    setFormData({ ...formData, serviceArea: e.target.value })
+                  }
+                  placeholder="e.g., 25 miles, Nationwide, Local"
+                />
+              </div>
+
+              {/* Team Size */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team Size
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.teamSize}
+                  onChange={(e) =>
+                    setFormData({ ...formData, teamSize: e.target.value })
+                  }
+                  placeholder="e.g., 10-15 employees, 50+ staff"
+                />
+              </div>
+
+              {/* Rating */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rating (1-5)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.rating}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rating: e.target.value })
+                  }
+                  placeholder="e.g., 4.8"
+                />
+              </div>
+
+              {/* Review Count */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Review Count
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.reviewCount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reviewCount: e.target.value })
+                  }
+                  placeholder="e.g., 56"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -578,11 +1021,13 @@ export default function CreateListing() {
                   <input
                     type="tel"
                     className="block w-full pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-                    placeholder="91603 03112"
+                    placeholder=""
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
+                    pattern="[0-9]{10}"
+                    maxLength="10"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
@@ -657,7 +1102,7 @@ export default function CreateListing() {
                 {formData.photos.map((photo, index) => (
                   <div key={index} className="relative group h-40">
                     <img
-                      src={photo}
+                      src={URL.createObjectURL(photo)}
                       alt={`Preview ${index}`}
                       className="w-full h-full object-cover rounded-lg"
                     />
@@ -676,20 +1121,27 @@ export default function CreateListing() {
                   </div>
                 ))}
 
-                {formData.photos.length < 5 && (
-                  <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                    <Plus className="h-8 w-8 text-gray-400" />
-                    <span className="mt-2 text-sm text-gray-600">
-                      Add photo
-                    </span>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                  </label>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  formData.photos.length < 5 && (
+                    <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
+                      <Plus className="h-8 w-8 text-gray-400" />
+                      <span className="mt-2 text-sm text-gray-600">
+                        Add photo
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        ref={fileInputRef}
+                      />
+                    </label>
+                  )
                 )}
               </div>
             </div>
@@ -840,11 +1292,19 @@ export default function CreateListing() {
               >
                 Back
               </button>
+              {error && (
+                <div className="text-red-500 text-sm mt-2">{error}</div>
+              )}
               <button
                 type="submit"
-                className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                disabled={isLoading}
+                className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create New Listing
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Create New Listing"
+                )}
               </button>
             </div>
           </div>

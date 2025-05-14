@@ -1,41 +1,18 @@
-"use client";
-
-import React, { useState } from "react";
-
-const ImageGallery = ({ images }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
+export default function ImageGallery({ images }) {
   return (
-    <div>
-      <div className="relative aspect-video bg-white rounded-md overflow-hidden mb-2">
-        <img
-          src={images[currentImageIndex]}
-          alt="Product image"
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      <div className="flex space-x-2 overflow-x-auto">
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-bold mb-4">Photos</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {images.map((image, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentImageIndex(index)}
-            className={`flex-shrink-0 w-20 h-16 rounded-md overflow-hidden ${
-              index === currentImageIndex
-                ? "ring-2 ring-clasifico-red"
-                : "opacity-70 hover:opacity-100"
-            }`}
-          >
+          <div key={index} className="aspect-square overflow-hidden rounded-lg">
             <img
               src={image}
-              alt={`Thumbnail ${index + 1}`}
-              className="w-full h-full object-cover"
+              alt={`Gallery image ${index + 1}`}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
             />
-          </button>
+          </div>
         ))}
       </div>
     </div>
   );
-};
-
-export default ImageGallery;
+}

@@ -1,26 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setError("");
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      router.push("/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,18 +61,22 @@ export default function Login() {
           />
         </div>
 
-        <div className="flex mx-0 md:mx-0 sm:mx-0 lg:mx-16 flex-col max-w-md mt-16 lg:mt-48">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Welcome Back!
-          </h1>
+        <div className="flex mx-0 md:mx-0 sm:mx-0 lg:mx-16 flex-col max-w-md mt-16 lg:mt-24">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Login</h1>
           <p className="text-gray-600 mb-8">
-            Don't have an Account?{" "}
+            Don't have an account?{" "}
             <a href="/register" className="text-teal-700 hover:underline">
               Register
             </a>
           </p>
 
-          <div className="space-y-4">
+          {error && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
                 type="email"
@@ -53,6 +84,7 @@ export default function Login() {
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -64,43 +96,44 @@ export default function Login() {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
-              <div className="flex justify-between items-center mt-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-teal-700 focus:ring-teal-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="rememberMe"
-                    className="ml-2 block text-sm text-gray-700"
-                  >
-                    Remember me
-                  </label>
-                </div>
-                <div>
-                  <a
-                    href="/forgot-password"
-                    className="text-sm text-teal-700 hover:underline"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-teal-700 focus:ring-teal-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-gray-600"
+                >
+                  Remember me
+                </label>
+              </div>
+              <div className="text-sm">
+                <a
+                  href="/forgot-password"
+                  className="text-teal-700 hover:underline"
+                >
+                  Forgot password?
+                </a>
               </div>
             </div>
 
             <button
-              onClick={handleSubmit}
-              className="w-full bg-teal-700 text-white font-medium py-3 px-4 rounded-md hover:bg-teal-800 transition duration-300"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-teal-700 text-white font-medium py-3 px-4 rounded-md hover:bg-teal-800 transition duration-300 disabled:opacity-50"
             >
-              Login
+              {loading ? "Logging in..." : "Log In"}
             </button>
-          </div>
+          </form>
         </div>
       </div>
 
