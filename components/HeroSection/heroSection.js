@@ -181,7 +181,7 @@ export default function HeroSection() {
               <br />
               <span className="text-teal-50">Local Services.</span>
               <br />
-              <span className="bg-teal-700 px-2 py-1 inline-block mt-2 shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-[1.02] transition-transform">
+              <span className="bg-teal-700 px-2 py-1 inline-block mt-2 shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-[1.02] ">
                 Endless Possibilities
               </span>
             </h1>
@@ -273,7 +273,6 @@ export default function HeroSection() {
                   />
                 </div>
 
-                {/* Location Dropdown (shows upward) */}
                 {isLocationDropdownOpen && (
                   <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-lg z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-200 origin-bottom">
                     {isLoading ? (

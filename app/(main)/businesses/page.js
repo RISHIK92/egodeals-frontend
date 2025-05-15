@@ -568,7 +568,7 @@ export default function ProfessionalListings() {
                     className="relative h-48"
                     onClick={() =>
                       router.push(
-                        `/businesses/${listing.title
+                        `/page/${listing.title
                           .toLowerCase()
                           .replace(/\s+/g, "-")}`
                       )
@@ -597,7 +597,7 @@ export default function ProfessionalListings() {
                         className="font-semibold text-lg text-gray-900 line-clamp-1"
                         onClick={() =>
                           router.push(
-                            `/businesses/${listing.title
+                            `/page/${listing.title
                               .toLowerCase()
                               .replace(/\s+/g, "-")}`
                           )
@@ -614,7 +614,7 @@ export default function ProfessionalListings() {
                       className="flex items-center text-sm text-gray-500 mb-3"
                       onClick={() =>
                         router.push(
-                          `/businesses/${listing.title
+                          `/page/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )
@@ -628,7 +628,7 @@ export default function ProfessionalListings() {
                       className="flex flex-wrap gap-2 mb-4"
                       onClick={() =>
                         router.push(
-                          `/businesses/${listing.title
+                          `/page/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )
@@ -654,7 +654,7 @@ export default function ProfessionalListings() {
                       className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
                       onClick={() =>
                         router.push(
-                          `/businesses/${listing.title
+                          `/page/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )

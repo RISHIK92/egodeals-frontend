@@ -169,47 +169,6 @@ export default function RandomListingsSection() {
                 </div>
               ))}
             </div>
-
-            <div className="mt-12 bg-white rounded-2xl shadow-xl overflow-hidden border border-white/50 p-6">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Find More Listings
-                </h3>
-                <p className="text-gray-600">
-                  Discover services and businesses in your area
-                </p>
-              </div>
-
-              <div className="flex flex-col md:flex-row bg-gray-50 rounded-xl overflow-hidden">
-                <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <Search className="h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search Keyword..."
-                      className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search Location..."
-                      className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-teal-700 hover:bg-teal-800 transition p-3 flex items-center justify-center">
-                  <button className="text-white font-medium flex items-center whitespace-nowrap">
-                    <Search className="h-5 w-5 mr-2" /> Search
-                  </button>
-                </div>
-              </div>
-            </div>
           </>
         ) : (
           <div className="text-center py-10">
