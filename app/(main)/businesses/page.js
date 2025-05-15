@@ -15,28 +15,35 @@ import {
   Filter,
   Check,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import debounce from "lodash.debounce";
 
 export default function ProfessionalListings() {
+  const searchParams = useSearchParams();
   const [listings, setListings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalListings, setTotalListings] = useState(0);
   const [itemsPerPage] = useState(9);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [locationFilter, setLocationFilter] = useState("All Locations");
-  const [categoryFilter, setCategoryFilter] = useState("All Categories");
-  const [typeFilter, setTypeFilter] = useState("ALL"); // New type filter
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search")?.toLowerCase() || ""
+  );
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search")?.toLowerCase() || ""
+  );
+  const [locationFilter, setLocationFilter] = useState(
+    searchParams.get("location") || "All Locations"
+  );
+  const [categoryFilter, setCategoryFilter] = useState(
+    searchParams.get("category") || "All Categories"
+  );
+  const [typeFilter, setTypeFilter] = useState("ALL");
   const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [categories, setCategories] = useState(["All Categories"]);
   const [locations, setLocations] = useState(["All Locations"]);
   const [error, setError] = useState(null);
-
-  // Enhanced dropdowns state
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
@@ -44,10 +51,8 @@ export default function ProfessionalListings() {
 
   const categoryDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
-
   const router = useRouter();
 
-  // Filtered options based on search
   const filteredCategories = categories.filter((cat) =>
     cat.toLowerCase().includes(categorySearch.toLowerCase())
   );
@@ -61,7 +66,9 @@ export default function ProfessionalListings() {
     setError(null);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/listing/professional?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}&category=${categoryFilter}&location=${locationFilter}&type=${typeFilter}`
+        `${
+          process.env.NEXT_PUBLIC_BACKEND_URL
+        }/listing/professional?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm.toLowerCase()}&category=${categoryFilter}&location=${locationFilter}&type=${typeFilter}`
       );
 
       if (!response.ok) {
@@ -88,7 +95,6 @@ export default function ProfessionalListings() {
     itemsPerPage,
   ]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -111,11 +117,9 @@ export default function ProfessionalListings() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [categoryOpen, locationOpen]);
 
-  // Initial data load
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch filter options first
         const [categoriesRes, locationsRes] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`),
           fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/cities`),
@@ -133,7 +137,6 @@ export default function ProfessionalListings() {
         setCategories(["All Categories", ...categoriesData]);
         setLocations(["All Locations", ...locationsData]);
 
-        // Then fetch initial listings
         await fetchListings();
       } catch (err) {
         console.error("Error fetching initial data:", err);
@@ -144,11 +147,45 @@ export default function ProfessionalListings() {
     fetchInitialData();
   }, []);
 
-  // Debounced search effect
+  const searchCities = useCallback(
+    debounce(async (query) => {
+      if (!query) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/cities`
+          );
+          const data = await response.json();
+          setLocations(["All Locations", ...data]);
+        } catch (err) {
+          console.error("Error fetching cities:", err);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${
+            process.env.NEXT_PUBLIC_BACKEND_URL
+          }/cities?search=${query.toLowerCase()}`
+        );
+        const data = await response.json();
+        setLocations(["All Locations", ...data]);
+      } catch (err) {
+        console.error("Error searching cities:", err);
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    searchCities(locationSearch);
+    return () => searchCities.cancel();
+  }, [locationSearch, searchCities]);
+
   useEffect(() => {
     const debouncedSearch = debounce(() => {
-      setSearchTerm(searchInput);
-      setCurrentPage(1); // Reset to first page when search changes
+      setSearchTerm(searchInput.toLowerCase());
+      setCurrentPage(1);
     }, 500);
 
     debouncedSearch();
@@ -158,15 +195,12 @@ export default function ProfessionalListings() {
     };
   }, [searchInput]);
 
-  // Fetch listings when filters or page changes
   useEffect(() => {
     if (!isLoading) {
-      // Don't fetch on initial load (handled by fetchInitialData)
       fetchListings();
     }
   }, [fetchListings, isLoading]);
 
-  // Filter handlers
   const handleCategoryChange = (value) => {
     setCategoryFilter(value);
     setCurrentPage(1);
@@ -182,16 +216,15 @@ export default function ProfessionalListings() {
     setCurrentPage(1);
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setSearchInput("");
     setCategoryFilter("All Categories");
     setLocationFilter("All Locations");
     setTypeFilter("ALL");
     setCurrentPage(1);
+    router.push("/businesses");
   };
 
-  // Pagination functions
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const nextPage = () =>
     currentPage < totalPages && setCurrentPage(currentPage + 1);
@@ -240,7 +273,6 @@ export default function ProfessionalListings() {
           </p>
         </div>
 
-        {/* Improved Listing Type Selector */}
         <div className="mb-6">
           <div className="inline-flex rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <button
@@ -296,7 +328,7 @@ export default function ProfessionalListings() {
                 placeholder="Search businesses, categories, or services..."
                 className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white text-gray-700 placeholder-gray-400 transition-all duration-200"
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => setSearchInput(e.target.value.toLowerCase())}
               />
               {searchInput && (
                 <button
@@ -324,11 +356,9 @@ export default function ProfessionalListings() {
             </button>
           </div>
 
-          {/* Enhanced Filter Section */}
           {showFilters && (
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4 transition-all duration-200">
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Enhanced Category Dropdown */}
                 <div className="w-full sm:w-1/2" ref={categoryDropdownRef}>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
                     Category
@@ -366,7 +396,7 @@ export default function ProfessionalListings() {
                               placeholder="Search categories..."
                               value={categorySearch}
                               onChange={(e) =>
-                                setCategorySearch(e.target.value)
+                                setCategorySearch(e.target.value.toLowerCase())
                               }
                               onClick={(e) => e.stopPropagation()}
                             />
@@ -406,7 +436,6 @@ export default function ProfessionalListings() {
                   </div>
                 </div>
 
-                {/* Enhanced Location Dropdown */}
                 <div className="w-full sm:w-1/2" ref={locationDropdownRef}>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
                     Location
@@ -449,7 +478,7 @@ export default function ProfessionalListings() {
                               placeholder="Search locations..."
                               value={locationSearch}
                               onChange={(e) =>
-                                setLocationSearch(e.target.value)
+                                setLocationSearch(e.target.value.toLowerCase())
                               }
                               onClick={(e) => e.stopPropagation()}
                             />
@@ -539,7 +568,7 @@ export default function ProfessionalListings() {
                     className="relative h-48"
                     onClick={() =>
                       router.push(
-                        `page/${listing.title
+                        `/businesses/${listing.title
                           .toLowerCase()
                           .replace(/\s+/g, "-")}`
                       )
@@ -568,7 +597,7 @@ export default function ProfessionalListings() {
                         className="font-semibold text-lg text-gray-900 line-clamp-1"
                         onClick={() =>
                           router.push(
-                            `page/${listing.title
+                            `/businesses/${listing.title
                               .toLowerCase()
                               .replace(/\s+/g, "-")}`
                           )
@@ -585,7 +614,7 @@ export default function ProfessionalListings() {
                       className="flex items-center text-sm text-gray-500 mb-3"
                       onClick={() =>
                         router.push(
-                          `page/${listing.title
+                          `/businesses/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )
@@ -595,12 +624,11 @@ export default function ProfessionalListings() {
                       <span>{listing.city}</span>
                     </div>
 
-                    {/* Moved badges together */}
                     <div
                       className="flex flex-wrap gap-2 mb-4"
                       onClick={() =>
                         router.push(
-                          `page/${listing.title
+                          `/businesses/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )
@@ -626,7 +654,7 @@ export default function ProfessionalListings() {
                       className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
                       onClick={() =>
                         router.push(
-                          `page/${listing.title
+                          `/businesses/${listing.title
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`
                         )
