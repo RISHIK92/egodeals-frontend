@@ -53,12 +53,12 @@ const SellerCard = ({ name, memberSince, image, phone, verified = false }) => {
           </Button>
         )}
 
-        <Button
+        {/* <Button
           variant="outline"
           className="btn-outline w-full justify-center flex items-center"
         >
           Message Seller
-        </Button>
+        </Button> */}
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           <button className="text-sm text-clasifico-darkGray hover:text-clasifico-red flex items-center justify-center w-full">

@@ -368,10 +368,6 @@ export default function ProfilePage() {
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-center">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Messenger
-                  </div>
                 </button>
 
                 <button

@@ -79,7 +79,7 @@ export default function Sidebar({ listing }) {
           </a>
 
           {/* Send Message Button */}
-          <button
+          {/* <button
             className="flex items-center justify-center bg-white hover:bg-teal-50 text-gray-800 font-medium py-3 px-4 rounded-md w-full border border-teal-200 transition-all duration-200"
             onClick={() => {
               console.log("Send message clicked");
@@ -87,7 +87,7 @@ export default function Sidebar({ listing }) {
           >
             <MessageSquare className="h-5 w-5 mr-3 text-teal-600" />
             <span>Send a message</span>
-          </button>
+          </button> */}
         </div>
       </div>
 

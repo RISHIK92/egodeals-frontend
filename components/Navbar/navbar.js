@@ -10,7 +10,7 @@ export default function Navbar() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const router = useRouter();
 
-  const navItems = ["Home", "Businesses", "Pricing", "Contact"];
+  const navItems = ["Home", "Businesses", "Pricing"];
 
   useEffect(() => {
     checkAuthStatus();

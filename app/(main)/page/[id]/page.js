@@ -25,6 +25,7 @@ async function getListingDetails(slug) {
     }
 
     const data = await response.json();
+    console.log(data);
     return data;
   } catch (error) {
     console.error("Error fetching listing details:", error);
@@ -45,6 +46,13 @@ export default async function ListingPage({ params }) {
       </div>
     );
   }
+
+  // Filter out banner images for the gallery
+  const galleryImages =
+    listing.images?.filter((img) => !img.isBanner).map((img) => img.url) || [];
+
+  // Get the first non-banner image URL for the header background, fallback to first image if no non-banner exists
+  const headerImageUrl = galleryImages[0] || listing.images?.[0]?.url || null;
 
   // Only create businessOwner if we have user data
   const businessOwner = listing.user
@@ -90,12 +98,13 @@ export default async function ListingPage({ params }) {
 
   return (
     <div className="min-h-screen flex flex-col lg:px-20">
+      {/* Header with background image */}
       <div className="relative h-80 bg-gray-800 overflow-hidden">
-        {listing.images?.length > 0 ? (
+        {headerImageUrl ? (
           <img
-            src={listing.images[0].url}
+            src={headerImageUrl}
             alt={listing.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 bg-gray-600"></div>
@@ -223,9 +232,9 @@ export default async function ListingPage({ params }) {
                 <ProductDescription description={listing.description} />
               )}
 
-              {listing.images?.length > 0 && (
-                <div className="mt-6 ml-6">
-                  <ImageGallery images={listing.images.map((img) => img.url)} />
+              {galleryImages.length > 0 && (
+                <div className="mt-6">
+                  <ImageGallery images={galleryImages} />
                 </div>
               )}
 
@@ -260,6 +269,7 @@ export default async function ListingPage({ params }) {
                 </div>
               )}
 
+              {console.log(listing.city)}
               {listing.city && (
                 <div className="mt-6">
                   <LocationMap location={listing.city} />
@@ -280,8 +290,8 @@ export default async function ListingPage({ params }) {
                           : `₹${item.price.toFixed(2)}`,
                       location: item.city,
                       image:
-                        item.images?.[0]?.url ||
-                        "https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                        item.images?.find((img) => !img.isBanner)?.url ||
+                        "https://images.unsplash.com/photo-1568992687947868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
                       featured: item.promotions?.length > 0,
                       negotiable: item.negotiable,
                     }))}

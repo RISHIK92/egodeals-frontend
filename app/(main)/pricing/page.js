@@ -41,7 +41,6 @@ const PricingSection = () => {
         "Featured on the homepage",
         "Featured in the category",
         "Keep online for 120 days",
-        "Priority customer support",
       ],
       featured: false,
       cta: "Get Premium+",

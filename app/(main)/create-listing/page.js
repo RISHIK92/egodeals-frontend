@@ -18,8 +18,13 @@ import {
   Camera,
   CheckCircle,
   Loader2,
+  ImagePlus,
+  ImageMinus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import PaymentGateway from "@/components/Payment/paymentGateway";
+import CityDropdown from "@/components/CategorySection/addCity";
+import { ToastContainer, toast } from "react-toastify";
 
 export default function CreateListing() {
   const router = useRouter();
@@ -39,8 +44,7 @@ export default function CreateListing() {
     phone: "",
     hidePhone: false,
     photos: [],
-    pricingOption: "Free",
-    phone: "",
+    pricingOption: "FREE",
     website: "",
     businessHours: {
       weekdays: { open: "9:00 AM", close: "6:00 PM" },
@@ -67,6 +71,9 @@ export default function CreateListing() {
   const [cities, setCities] = useState([]);
   const [user, setUser] = useState(null);
   const fileInputRef = useRef(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [createdListingId, setCreatedListingId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,7 +94,6 @@ export default function CreateListing() {
         setCities(citiesData);
         setUser(userData.user);
 
-        // Pre-fill user data if available
         if (userData.user) {
           setFormData((prev) => ({
             ...prev,
@@ -110,6 +116,16 @@ export default function CreateListing() {
   const filteredCities = cities.filter((city) =>
     city.toLowerCase().includes(cityFilter.toLowerCase())
   );
+
+  const toggleBanner = (index) => {
+    setFormData((prev) => {
+      const newPhotos = prev.photos.map((photo, i) => ({
+        ...photo,
+        isBanner: i === index,
+      }));
+      return { ...prev, photos: newPhotos };
+    });
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -171,50 +187,6 @@ export default function CreateListing() {
     </div>
   );
 
-  const CityDropdown = () => (
-    <div
-      ref={cityRef}
-      className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg py-1 border border-gray-200"
-    >
-      <div className="px-3 py-2 border-b border-gray-200">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search cities..."
-            className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="max-h-60 overflow-y-auto">
-        {filteredCities.map((city) => (
-          <div
-            key={city}
-            className={`px-4 py-2 cursor-pointer flex justify-between items-center hover:bg-teal-50 ${
-              formData.city === city
-                ? "bg-teal-50 text-teal-700"
-                : "text-gray-700"
-            }`}
-            onClick={() => {
-              setFormData({ ...formData, city });
-              setShowCityDropdown(false);
-              setCityFilter("");
-            }}
-          >
-            {city}
-            {formData.city === city && (
-              <Check className="h-4 w-4 text-teal-600" />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   const handleTagKeyDown = (e) => {
     if (["Enter", ","].includes(e.key)) {
       e.preventDefault();
@@ -263,30 +235,52 @@ export default function CreateListing() {
 
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    const invalidFiles = files.filter(
+      (file) => !validTypes.includes(file.type)
+    );
+
+    if (invalidFiles.length > 0) {
+      toast.error(
+        `Invalid file type: ${invalidFiles
+          .map((f) => f.name)
+          .join(", ")}. Please upload JPEG, PNG, or WebP images.`
+      );
+      return;
+    }
+
     if (files.length + formData.photos.length > 5) {
-      alert("You can upload maximum 5 photos");
+      toast.error("You can upload maximum 5 photos");
       return;
     }
 
     setIsLoading(true);
     try {
+      const newPhotos = files.map((file) => ({
+        file,
+        isBanner: false,
+      }));
+
       setFormData((prev) => ({
         ...prev,
-        photos: [...prev.photos, ...files],
+        photos: [...prev.photos, ...newPhotos],
       }));
+      toast.success("Photos uploaded successfully!");
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Failed to process images");
+      toast.error("Failed to process images");
     } finally {
       setIsLoading(false);
     }
   };
 
   const removePhoto = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index),
-    }));
+    setFormData((prev) => {
+      const newPhotos = prev.photos.filter((_, i) => i !== index);
+      return { ...prev, photos: newPhotos };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -295,37 +289,54 @@ export default function CreateListing() {
     setError("");
 
     try {
-      // First upload photos if any
-      let uploadedPhotoUrls = [];
-      if (formData.photos.length > 0) {
-        const uploadFormData = new FormData();
-        formData.photos.forEach((file) => {
-          uploadFormData.append("photos", file);
-        });
+      // let uploadedPhotoUrls = [];
+      // if (formData.photos.length > 0) {
+      //   const uploadFormData = new FormData();
+      //   formData.photos.forEach((photo) => {
+      //     uploadFormData.append("photos", photo.file); // Changed from "files" to "photos"
+      //   });
 
-        const uploadResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
-          {
-            method: "POST",
-            body: uploadFormData,
-            credentials: "include",
-          }
-        );
+      //   const bannerIndex = formData.photos.findIndex(
+      //     (photo) => photo.isBanner
+      //   );
+      //   uploadFormData.append("bannerIndex", bannerIndex.toString());
 
-        if (!uploadResponse.ok) {
-          throw new Error("Photo upload failed");
-        }
+      //   const uploadResponse = await fetch(
+      //     `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
+      //     {
+      //       method: "POST",
+      //       body: uploadFormData,
+      //       credentials: "include",
+      //     }
+      //   );
 
-        const uploadData = await uploadResponse.json();
-        uploadedPhotoUrls = uploadData.urls;
-      }
+      //   if (!uploadResponse.ok) {
+      //     throw new Error("Photo upload failed");
+      //   }
+
+      //   const uploadData = await uploadResponse.json();
+      //   uploadedPhotoUrls = uploadData.urls;
+      // }
+
+      // Map pricing option to backend values
+      const listingTierMap = {
+        Free: "FREE",
+        PREMIUM: "PREMIUM",
+        PREMIUM_PLUS: "PREMIUM_PLUS",
+      };
+
+      const subscriptionIdMap = {
+        Free: "1",
+        PREMIUM: "2",
+        PREMIUM_PLUS: "3",
+      };
 
       const listingData = {
         category: formData.category,
         type: formData.type,
         title: formData.title,
         description: formData.description,
-        price: parseFloat(formData.price) || 0,
+        price: formData.price || "0",
         negotiable: formData.negotiable,
         city: formData.city,
         tags: formData.tags,
@@ -333,20 +344,16 @@ export default function CreateListing() {
         email: formData.email,
         phone: formData.phone,
         hidePhone: formData.hidePhone,
-        pricingOption: formData.pricingOption,
-        photos: uploadedPhotoUrls,
-        website: formData.website, // Added website field
-        businessHours: formData.businessHours, // Added businessHours field
+        listingTier: listingTierMap[formData.pricingOption] || "FREE",
+        website: formData.website,
+        businessHours: JSON.stringify(formData.businessHours), // Stringify business hours
         businessCategory: formData.businessCategory,
-        establishedYear: formData.establishedYear
-          ? parseInt(formData.establishedYear)
-          : null,
+        establishedYear: formData.establishedYear,
         serviceArea: formData.serviceArea,
         teamSize: formData.teamSize,
-        rating: formData.rating ? parseFloat(formData.rating) : null,
-        reviewCount: formData.reviewCount
-          ? parseInt(formData.reviewCount)
-          : null,
+        rating: formData.rating,
+        reviewCount: formData.reviewCount,
+        subscriptionId: subscriptionIdMap[formData.pricingOption] || "1",
       };
 
       const response = await fetch(
@@ -363,14 +370,21 @@ export default function CreateListing() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create listing");
+        toast.error(err.message || "Failed to create listing");
       }
 
       const result = await response.json();
-      setIsSuccess(true);
+      setCreatedListingId(result.listing.id); // Changed from result.id to result.listing.id
+
+      if (formData.pricingOption === "FREE") {
+        setIsSuccess(true);
+      } else {
+        setPaymentAmount(formData.pricingOption === "PREMIUM" ? 850 : 15000);
+        setShowPayment(true);
+      }
     } catch (err) {
       console.error("Submission error:", err);
-      setError(err.message || "Failed to create listing");
+      toast.error(err.message || "Failed to create listing");
     } finally {
       setIsLoading(false);
     }
@@ -537,7 +551,7 @@ export default function CreateListing() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 required
-                minLength={10}
+                minLength={2}
                 maxLength={100}
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -641,7 +655,15 @@ export default function CreateListing() {
                     }`}
                   />
                 </button>
-                {showCityDropdown && <CityDropdown />}
+                {showCityDropdown && (
+                  <CityDropdown
+                    cities={cities}
+                    selectedCity={formData.city}
+                    onSelectCity={(city) => setFormData({ ...formData, city })}
+                    showDropdown={showCityDropdown}
+                    setShowDropdown={setShowCityDropdown}
+                  />
+                )}
               </div>
             </div>
 
@@ -720,13 +742,11 @@ export default function CreateListing() {
                 />
               </div>
 
-              {/* Business Hours */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Business Hours
                 </label>
                 <div className="space-y-3">
-                  {/* Weekdays */}
                   <div className="flex items-center space-x-2">
                     <span className="w-24 text-gray-600">Monday-Friday:</span>
                     <input
@@ -766,7 +786,6 @@ export default function CreateListing() {
                     />
                   </div>
 
-                  {/* Saturday */}
                   <div className="flex items-center space-x-2">
                     <span className="w-24 text-gray-600">Saturday:</span>
                     <input
@@ -1095,29 +1114,53 @@ export default function CreateListing() {
               </h3>
               <p className="text-sm text-gray-500 mb-4">
                 Upload at least one photo (max 5). The first photo will be
-                featured.
+                featured. Select one as your banner image.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {formData.photos.map((photo, index) => (
                   <div key={index} className="relative group h-40">
                     <img
-                      src={URL.createObjectURL(photo)}
+                      src={URL.createObjectURL(photo.file)}
                       alt={`Preview ${index}`}
                       className="w-full h-full object-cover rounded-lg"
                     />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={16} />
-                    </button>
-                    {index === 0 && (
-                      <span className="absolute bottom-2 left-2 bg-teal-600 text-white text-xs px-2 py-1 rounded">
-                        Featured
-                      </span>
-                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2">
+                      <div className="flex justify-between items-center">
+                        {index === 0 && (
+                          <span className="text-xs text-white bg-teal-600 px-2 py-1 rounded">
+                            Featured
+                          </span>
+                        )}
+                        {photo.isBanner && (
+                          <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded">
+                            Banner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="absolute top-1 right-1 flex flex-col space-y-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBanner(index);
+                        }}
+                        className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-90"
+                      >
+                        {photo.isBanner ? "Remove Banner" : "Set as Banner"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePhoto(index);
+                        }}
+                        className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-90"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
 
@@ -1186,8 +1229,8 @@ export default function CreateListing() {
                     <input
                       type="radio"
                       name="pricingOption"
-                      value="Free"
-                      checked={formData.pricingOption === "Free"}
+                      value="FREE"
+                      checked={formData.pricingOption === "FREE"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1215,8 +1258,8 @@ export default function CreateListing() {
                     <input
                       type="radio"
                       name="pricingOption"
-                      value="TopPage"
-                      checked={formData.pricingOption === "TopPage"}
+                      value="PREMIUM"
+                      checked={formData.pricingOption === "PREMIUM"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1244,8 +1287,8 @@ export default function CreateListing() {
                     <input
                       type="radio"
                       name="pricingOption"
-                      value="TopPageAd"
-                      checked={formData.pricingOption === "TopPageAd"}
+                      value="PREMIUM_PLUS"
+                      checked={formData.pricingOption === "PREMIUM_PLUS"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1310,6 +1353,35 @@ export default function CreateListing() {
           </div>
         )}
       </form>
+      {showPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <PaymentGateway
+              amount={paymentAmount}
+              currency="INR"
+              listingId={createdListingId}
+              pricingOption={formData.pricingOption}
+              onSuccess={() => {
+                setIsSuccess(true);
+                setShowPayment(false);
+              }}
+              onClose={() => setShowPayment(false)}
+            />
+          </div>
+        </div>
+      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }
