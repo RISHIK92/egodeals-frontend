@@ -48,6 +48,7 @@ export default function ProfessionalListings() {
   const [locationOpen, setLocationOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [locationSearch, setLocationSearch] = useState("");
+  const [bookmarkedListings, setBookmarkedListings] = useState([]);
 
   const categoryDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
@@ -76,7 +77,13 @@ export default function ProfessionalListings() {
       }
 
       const data = await response.json();
-      setListings(data.listings);
+      setListings(
+        data.listings.map((listing) => ({
+          ...listing,
+          // Map city name from the relation
+          city: listing.city?.name || "Unknown Location",
+        }))
+      );
       setTotalListings(data.total);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -146,6 +153,59 @@ export default function ProfessionalListings() {
 
     fetchInitialData();
   }, []);
+
+  const fetchBookmarkedListings = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/favorites`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setBookmarkedListings(data.map((fav) => fav.listingId));
+      }
+    } catch (err) {
+      console.error("Error fetching bookmarks:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBookmarkedListings();
+  }, [fetchBookmarkedListings, isLoading]);
+
+  const toggleBookmark = async (listingId) => {
+    try {
+      const isCurrentlyBookmarked = bookmarkedListings.includes(listingId);
+
+      if (isCurrentlyBookmarked) {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/${listingId}/favorite`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
+        setBookmarkedListings(
+          bookmarkedListings.filter((id) => id !== listingId)
+        );
+      } else {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/${listingId}/favorite`,
+          {
+            method: "POST",
+            credentials: "include",
+          }
+        );
+        setBookmarkedListings([...bookmarkedListings, listingId]);
+      }
+    } catch (err) {
+      console.error("Error toggling bookmark:", err);
+    }
+  };
 
   const searchCities = useCallback(
     debounce(async (query) => {
@@ -559,42 +619,75 @@ export default function ProfessionalListings() {
         {listings.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {listings.map((listing) => (
-                <div
-                  key={listing.id}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
+              {listings.map((listing) => {
+                const isBookmarked = bookmarkedListings.includes(listing.id);
+                return (
                   <div
-                    className="relative h-48"
-                    onClick={() =>
-                      router.push(
-                        `/page/${listing.title
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`
-                      )
-                    }
+                    key={listing.id}
+                    className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer"
                   >
-                    {listing.images?.length > 0 ? (
-                      <img
-                        src={listing.images[0].url}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500">No Image</span>
+                    <div
+                      className="relative h-48"
+                      onClick={() =>
+                        router.push(
+                          `/page/${listing.slug
+                            .toLowerCase()
+                            .replace(/\s+/g, "-")}`
+                        )
+                      }
+                    >
+                      {listing.images?.length > 0 ? (
+                        <img
+                          src={listing.images[0].url}
+                          alt={listing.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500">No Image</span>
+                        </div>
+                      )}
+                      <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full flex items-center text-xs">
+                        <Camera className="h-3 w-3 mr-1" />
+                        {listing.images?.length || 0}
                       </div>
-                    )}
-                    <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full flex items-center text-xs">
-                      <Camera className="h-3 w-3 mr-1" />
-                      {listing.images?.length || 0}
                     </div>
-                  </div>
 
-                  <div className="p-5">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3
-                        className="font-semibold text-lg text-gray-900 line-clamp-1"
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3
+                          className="font-semibold text-lg text-gray-900 line-clamp-1"
+                          onClick={() =>
+                            router.push(
+                              `/page/${listing.title
+                                .toLowerCase()
+                                .replace(/\s+/g, "-")}`
+                            )
+                          }
+                        >
+                          {listing.title}
+                        </h3>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBookmark(listing.id);
+                          }}
+                          className={`transition-colors ${
+                            isBookmarked
+                              ? "text-amber-500"
+                              : "text-gray-400 hover:text-amber-500"
+                          }`}
+                        >
+                          <Bookmark
+                            className={`h-5 w-5 ${
+                              isBookmarked ? "fill-current" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <div
+                        className="flex items-center text-sm text-gray-500 mb-3"
                         onClick={() =>
                           router.push(
                             `/page/${listing.title
@@ -603,68 +696,56 @@ export default function ProfessionalListings() {
                           )
                         }
                       >
-                        {listing.title}
-                      </h3>
-                      <button className="text-gray-400 hover:text-rose-500 transition-colors">
-                        <Bookmark className="h-5 w-5" />
+                        {listing.city && (
+                          <>
+                            <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                            <span>{listing.city}</span>
+                          </>
+                        )}
+                      </div>
+
+                      <div
+                        className="flex flex-wrap gap-2 mb-4"
+                        onClick={() =>
+                          router.push(
+                            `/page/${listing.title
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`
+                          )
+                        }
+                      >
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                          {listing.category?.name || "Uncategorized"}
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            listing.type === "PROFESSIONAL"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {listing.type === "PROFESSIONAL"
+                            ? "Professional"
+                            : "Individual"}
+                        </span>
+                      </div>
+
+                      <button
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                        onClick={() =>
+                          router.push(
+                            `/page/${listing.title
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`
+                          )
+                        }
+                      >
+                        Contact Business
                       </button>
                     </div>
-
-                    <div
-                      className="flex items-center text-sm text-gray-500 mb-3"
-                      onClick={() =>
-                        router.push(
-                          `/page/${listing.title
-                            .toLowerCase()
-                            .replace(/\s+/g, "-")}`
-                        )
-                      }
-                    >
-                      <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                      <span>{listing.city}</span>
-                    </div>
-
-                    <div
-                      className="flex flex-wrap gap-2 mb-4"
-                      onClick={() =>
-                        router.push(
-                          `/page/${listing.title
-                            .toLowerCase()
-                            .replace(/\s+/g, "-")}`
-                        )
-                      }
-                    >
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                        {listing.category?.name || "Uncategorized"}
-                      </span>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          listing.type === "PROFESSIONAL"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-purple-100 text-purple-800"
-                        }`}
-                      >
-                        {listing.type === "PROFESSIONAL"
-                          ? "Professional"
-                          : "Individual"}
-                      </span>
-                    </div>
-
-                    <button
-                      className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
-                      onClick={() =>
-                        router.push(
-                          `/page/${listing.title
-                            .toLowerCase()
-                            .replace(/\s+/g, "-")}`
-                        )
-                      }
-                    >
-                      Contact Business
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {totalPages > 1 && (

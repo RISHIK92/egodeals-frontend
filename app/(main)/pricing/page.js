@@ -1,51 +1,81 @@
 "use client";
 import Navbar from "@/components/Navbar/navbar";
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const PricingSection = () => {
-  const pricingPlans = [
-    {
-      name: "Free",
-      price: "₹ 0",
-      duration: "/ listing",
-      features: [
-        "Keep online for 30 days",
-        "Basic listing visibility",
-        "Up to 5 images allowed",
-        "Standard search results",
-      ],
-      featured: false,
-      cta: "Get Started",
-    },
-    {
-      name: "Premium",
-      price: "₹ 8.50",
-      duration: "/ listing",
-      features: [
-        "7 days of promotion",
-        "Up to 10 images allowed",
-        "Featured on the homepage",
-        "Featured in the category",
-        "Keep online for 60 days",
-      ],
-      featured: true,
-      cta: "Upgrade Now",
-    },
-    {
-      name: "Premium+",
-      price: "₹ 150",
-      duration: "/ listing",
-      features: [
-        "30 days of promotion",
-        "Up to 15 images allowed",
-        "Featured on the homepage",
-        "Featured in the category",
-        "Keep online for 120 days",
-      ],
-      featured: false,
-      cta: "Get Premium+",
-    },
-  ];
+  const [pricingPlans, setPricingPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchPricingPlans = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/subscription-plans`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch pricing plans");
+        }
+        const data = await response.json();
+        setPricingPlans(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPricingPlans();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 text-center">
+        Loading pricing plans...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 text-center text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
+  const transformedPlans = pricingPlans.map((plan) => ({
+    name: plan.name,
+    price: `₹ ${plan.price}`,
+    duration: "/ listing",
+    features: [
+      plan.promotionDays > 0
+        ? `${plan.promotionDays} days of promotion`
+        : "Basic listing visibility",
+      `Keep online for ${plan.durationDays} days`,
+      plan.tierType === "FREE"
+        ? "Up to 5 images allowed"
+        : plan.tierType === "PREMIUM"
+        ? "Up to 10 images allowed"
+        : "Up to 15 images allowed",
+      plan.tierType !== "FREE"
+        ? "Featured on the homepage"
+        : "Standard search results",
+      plan.tierType !== "FREE" ? "Featured in the category" : "",
+    ].filter(Boolean),
+    featured: plan.tierType === "PREMIUM",
+    cta:
+      plan.tierType === "FREE"
+        ? "Get Started"
+        : plan.tierType === "PREMIUM"
+        ? "Upgrade Now"
+        : "Get Premium+",
+  }));
 
   return (
     <>
@@ -62,7 +92,7 @@ const PricingSection = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
+            {transformedPlans.map((plan, index) => (
               <div
                 key={index}
                 className={`bg-white rounded-xl shadow-sm overflow-hidden border ${
@@ -99,7 +129,8 @@ const PricingSection = () => {
                       plan.featured
                         ? "bg-teal-600 hover:bg-teal-700 text-white"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                    } transition-colors`}
+                    } transition-colors cursor-pointer`}
+                    onClick={() => router.push("/create-listing")}
                   >
                     {plan.cta}
                   </button>

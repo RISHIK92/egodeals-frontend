@@ -7,9 +7,9 @@ import ProductDescription from "@/components/PageComponents/productDescription";
 import ProductFeatures from "@/components/PageComponents/productFeatures";
 import LocationMap from "@/components/PageComponents/locationMap";
 import Sidebar from "@/components/PageComponents/sidebar";
-import { Share, Heart, Building, Star } from "lucide-react";
-import Navbar from "@/components/Navbar/navbar";
+import { Star } from "lucide-react";
 import TagsComponent from "@/components/PageComponents/tagComponent";
+import ListingPageClient from "@/components/PageComponents/shareClient";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -24,9 +24,7 @@ async function getListingDetails(slug) {
       throw new Error(`Failed to fetch listing: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log(data);
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error fetching listing details:", error);
     return { listing: null, similarListings: [] };
@@ -34,7 +32,8 @@ async function getListingDetails(slug) {
 }
 
 export default async function ListingPage({ params }) {
-  const { listing, similarListings } = await getListingDetails(params.id);
+  const { id } = params;
+  const { listing, similarListings } = await getListingDetails(id);
 
   if (!listing) {
     return (
@@ -47,62 +46,44 @@ export default async function ListingPage({ params }) {
     );
   }
 
-  // Filter out banner images for the gallery
-  const galleryImages =
-    listing.images?.filter((img) => !img.isBanner).map((img) => img.url) || [];
+  // Get images sorted with primary first
+  const images = listing.images.filter((image) => !image.isBanner) || [];
+  const primaryImage =
+    images.find((img) => img.isPrimary)?.url || images[0]?.url;
 
-  // Get the first non-banner image URL for the header background, fallback to first image if no non-banner exists
-  const headerImageUrl = galleryImages[0] || listing.images?.[0]?.url || null;
-
-  // Only create businessOwner if we have user data
-  const businessOwner = listing.user
+  // Format user data
+  const user = listing.user
     ? {
         name:
-          `${listing.user?.firstName || ""} ${
-            listing.user?.lastName || ""
+          `${listing.user.firstName || ""} ${
+            listing.user.lastName || ""
           }`.trim() || "Anonymous",
-        verified: true,
-        rating: 5,
-        reviewCount: listing.user?.reviewCount || 0,
-        image:
-          listing.user?.image ||
-          "https://egodeals.com/storage/app/default/user.png",
-        type:
-          listing.promotions?.length > 0
-            ? "FEATURED BUSINESS"
-            : "STANDARD BUSINESS",
-        memberSince: listing.user?.createdAt
+        image: "https://egodeals.com/storage/app/default/user.png", // Default image
+        phone: listing.user.phone,
+        email: listing.user.email,
+        city: listing.user.city?.name,
+        memberSince: listing.user.createdAt
           ? new Date(listing.user.createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
             })
           : "Recently",
+        isFeatured: listing.promotions?.length > 0,
       }
     : null;
 
-  // Only use highlights if they exist
-  const businessFeatures =
-    listing.highlights?.length > 0 ? listing.highlights : null;
-
   // Format price display
-  const getPriceDisplay = () => {
-    if (
-      listing.price === undefined ||
-      listing.price === null ||
-      listing.price === 0
-    ) {
-      return "Contact for Price";
-    }
-    return `₹${listing.price.toFixed(2)}`;
-  };
+  const priceDisplay = listing.price
+    ? `₹${listing.price.toFixed(2)}`
+    : "Contact for Price";
 
   return (
     <div className="min-h-screen flex flex-col lg:px-20">
       {/* Header with background image */}
       <div className="relative h-80 bg-gray-800 overflow-hidden">
-        {headerImageUrl ? (
+        {primaryImage ? (
           <img
-            src={headerImageUrl}
+            src={primaryImage}
             alt={listing.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -121,101 +102,66 @@ export default async function ListingPage({ params }) {
                 {listing.category.name}
               </span>
             )}
+            {listing.city?.name && (
+              <span className="bg-gray-700 text-white text-xs px-2 py-1 rounded">
+                {listing.city.name}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {businessOwner && (
+      {user && (
         <div className="bg-white shadow-md">
           <div className="container-custom py-4">
             <div className="flex flex-wrap items-center justify-between">
               <div className="flex items-center space-x-4 mx-4">
                 <img
-                  src={businessOwner.image}
-                  alt={businessOwner.name}
+                  src={user.image}
+                  alt={user.name}
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <div className="flex items-center">
-                    <h2 className="font-medium">{businessOwner.name}</h2>
-                    {businessOwner.verified && (
-                      <span className="ml-2 text-green-500">
-                        <svg
-                          className="w-4 h-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center">
+                  <h2 className="font-medium">{user.name}</h2>
+                  <div className="flex items-center mt-1">
                     {Array(5)
                       .fill(0)
                       .map((_, i) => (
                         <Star
                           key={i}
                           className={`w-4 h-4 ${
-                            i < businessOwner.rating
+                            i < 4
                               ? "text-yellow-400 fill-yellow-400"
                               : "text-gray-300"
                           }`}
                         />
                       ))}
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({businessOwner.reviewCount})
-                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 md:mt-0 flex items-center mx-4">
-                <span className="bg-indigo-500 text-white text-xs px-3 py-1 rounded mr-6">
-                  {businessOwner.type}
-                </span>
-                <div>
-                  <div className="flex items-center">
-                    <span className="text-gray-500 text-sm">Price:</span>
-                    <span className="text-clasifico-red font-bold text-xl ml-2">
-                      {getPriceDisplay()}
+                {user.isFeatured && (
+                  <span className="bg-indigo-500 text-white text-xs px-3 py-1 rounded mr-6">
+                    FEATURED BUSINESS
+                  </span>
+                )}
+                <div className="flex items-center">
+                  <span className="text-gray-500 text-sm">Price:</span>
+                  <span className="text-clasifico-red font-bold text-xl ml-2">
+                    {priceDisplay}
+                  </span>
+                  {listing.negotiable && (
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded ml-3">
+                      Negotiable
                     </span>
-                    {listing.negotiable && (
-                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded ml-3 flex items-center">
-                        Negotiable
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <div className="flex ml-6 space-x-2">
-                  <button className="p-2 border rounded hover:bg-gray-50">
-                    <Share className="h-5 w-5 text-gray-500" />
-                  </button>
-                  <button className="p-2 border rounded hover:bg-gray-50">
-                    <svg
-                      className="h-5 w-5 text-gray-500"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M7 17L17 7M7 7H17V17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                  <button className="p-2 border rounded hover:bg-gray-50">
-                    <Heart className="h-5 w-5 text-gray-500" />
-                  </button>
+                <div className="flex ml-6">
+                  <ListingPageClient
+                    listing={listing}
+                    similarListings={similarListings}
+                  />
                 </div>
               </div>
             </div>
@@ -232,89 +178,79 @@ export default async function ListingPage({ params }) {
                 <ProductDescription description={listing.description} />
               )}
 
-              {galleryImages.length > 0 && (
+              {images.length > 0 && (
                 <div className="mt-6">
-                  <ImageGallery images={galleryImages} />
+                  <ImageGallery images={images.map((img) => img.url)} />
                 </div>
               )}
 
-              {businessFeatures && (
+              {listing.highlights?.length > 0 && (
                 <div className="mt-6">
                   <ProductFeatures
-                    features={businessFeatures}
+                    features={listing.highlights}
                     listingDetails={{
-                      ...(listing.businessCategory && {
-                        businessCategory: listing.businessCategory,
-                      }),
-                      ...(listing.establishedYear && {
-                        establishedYear: listing.establishedYear,
-                      }),
-                      ...(listing.serviceArea && {
-                        serviceArea: listing.serviceArea,
-                      }),
-                      ...(listing.teamSize && { teamSize: listing.teamSize }),
-                      ...(listing.rating && { rating: listing.rating }),
-                      ...(listing.reviewCount && {
-                        reviewCount: listing.reviewCount,
-                      }),
+                      businessCategory: listing.businessCategory,
+                      establishedYear: listing.establishedYear,
+                      serviceArea: listing.serviceArea,
+                      teamSize: listing.teamSize,
                     }}
                   />
                 </div>
               )}
 
-              {/* Tags Component */}
-              {listing.tags && listing.tags.length > 0 && (
+              {listing.tags?.length > 0 && (
                 <div className="mt-6">
                   <TagsComponent tags={listing.tags} />
                 </div>
               )}
 
-              {console.log(listing.city)}
-              {listing.city && (
+              {listing.locationUrl && (
                 <div className="mt-6">
-                  <LocationMap location={listing.city} />
+                  <LocationMap locationUrl={listing.locationUrl} />
                 </div>
               )}
 
-              {similarListings?.length > 0 && (
+              {similarListings.length > 0 && (
                 <div className="mt-6">
                   <SimilarAds
                     ads={similarListings.map((item) => ({
                       id: item.id,
                       title: item.title,
-                      price:
-                        item.price === undefined ||
-                        item.price === null ||
-                        item.price === 0
-                          ? "Contact for Price"
-                          : `₹${item.price.toFixed(2)}`,
-                      location: item.city,
-                      image:
-                        item.images?.find((img) => !img.isBanner)?.url ||
-                        "https://images.unsplash.com/photo-1568992687947868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                      price: item.price
+                        ? `₹${item.price.toFixed(2)}`
+                        : "Contact for Price",
+                      location: item.city || "Unknown Location",
+                      image: item.images?.[0]?.url || "/placeholder-image.jpg",
                       featured: item.promotions?.length > 0,
                       negotiable: item.negotiable,
+                      businessCategory: item.category?.name,
+                      slug: item.slug,
                     }))}
                   />
                 </div>
               )}
             </div>
+
             <div>
-              {businessOwner && (
+              {user && (
                 <SellerCard
-                  name={businessOwner.name}
-                  memberSince={businessOwner.memberSince}
-                  image={businessOwner.image}
-                  verified={businessOwner.verified}
-                  phone={listing.user?.phone}
-                  email={listing.user?.email}
+                  name={user.name}
+                  memberSince={user.memberSince}
+                  image={user.image}
+                  verified={true}
+                  phone={user.phone}
+                  email={user.email}
+                  location={user.city}
                 />
               )}
+
               <div className="mt-6">
                 <Sidebar
                   listing={{
                     ...listing,
-                    priceDisplay: getPriceDisplay(),
+                    priceDisplay,
+                    category: listing.category?.name,
+                    city: listing.city?.name,
                   }}
                 />
               </div>

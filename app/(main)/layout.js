@@ -34,45 +34,41 @@ function Footer() {
                 </p>
               </div>
             </div>
-
-            <div className="mt-4">
-              <p className="font-medium">
-                Address: <span className="font-normal">Something</span>
-              </p>
-            </div>
-
-            <div className="mt-2">
-              <p className="font-medium">
-                Have any queries?{" "}
-                <a href="#" className="text-teal-700 font-semibold underline">
-                  Contact Support
-                </a>
-              </p>
-            </div>
           </div>
 
-          {/* Categories and shortcuts */}
           <div className="grid grid-cols-2 gap-8">
             <div>
               <h3 className="font-semibold text-lg mb-4">Top Categories</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a
+                    href={`/businesses?category=${"property"}`}
+                    className="hover:text-teal-700"
+                  >
                     Property
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a
+                    href={`/businesses?category=${"Home Appliances"}`}
+                    className="hover:text-teal-700"
+                  >
                     Home Appliances
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a
+                    href={`/businesses?category=${"Electronics"}`}
+                    className="hover:text-teal-700"
+                  >
                     Electronics
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a
+                    href={`/businesses?category=${"Health & Beauty"}`}
+                    className="hover:text-teal-700"
+                  >
                     Health & Beauty
                   </a>
                 </li>
@@ -83,22 +79,22 @@ function Footer() {
               <h3 className="font-semibold text-lg mb-4">Shortcuts</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a href="/profile" className="hover:text-teal-700">
                     My Account
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a href="/login" className="hover:text-teal-700">
                     Login
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a href="/register" className="hover:text-teal-700">
                     Register
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-teal-700">
+                  <a href="/" className="hover:text-teal-700">
                     Home
                   </a>
                 </li>
@@ -112,11 +108,6 @@ function Footer() {
             <div className="relative h-40 bg-gray-100 rounded-md overflow-hidden">
               {/* Placeholder for map */}
               <div className="absolute inset-0 bg-gray-200">
-                <img
-                  src="/api/placeholder/400/160"
-                  alt="Map"
-                  className="w-full h-full object-cover"
-                />
                 <div className="absolute top-2 right-2 flex flex-col">
                   <button className="bg-white rounded w-6 h-6 flex items-center justify-center mb-1 shadow">
                     +

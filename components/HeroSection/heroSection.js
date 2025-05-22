@@ -22,6 +22,7 @@ export default function HeroSection() {
   const locationRef = useRef(null);
   const searchContainerRef = useRef(null);
   const locationInputRef = useRef(null);
+  const [isSearchHovered, setIsSearchHovered] = useState(false);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -157,42 +158,54 @@ export default function HeroSection() {
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-[#EC5944] via-[#ED7055] to-[#FFAEA2] h-[650px] before:content-[''] before:absolute before:inset-0 before:bg-[url('https://res.cloudinary.com/df622sxkk/image/upload/v1746738800/noise-texture_rlbvvs.png')] before:opacity-5 before:mix-blend-overlay">
-      {/* Background elements */}
+      {/* Background elements with more rounded corners */}
       <div
         className="absolute right-0 top-0 bottom-0 w-1/3 bg-teal-700 hidden lg:block"
         style={{
-          borderRadius: "40% 0 0 60%",
+          borderRadius: "50% 0 0 70%",
           opacity: 0.9,
+          transform: "translateX(5%)",
+          transition: "all 0.5s ease-out",
         }}
       />
 
-      {/* Abstract shapes */}
-      <div className="absolute -left-20 top-20 w-64 h-64 rounded-full bg-white/10 hidden lg:block" />
-      <div className="absolute right-1/3 bottom-1/4 w-32 h-32 rounded-full bg-teal-500/10 hidden lg:block" />
+      {/* Animated abstract shapes */}
+      <div
+        className="absolute -left-20 top-20 w-64 h-64 rounded-full bg-white/10 hidden lg:block animate-pulse"
+        style={{ animationDuration: "8s" }}
+      />
+      <div
+        className="absolute right-1/3 bottom-1/4 w-32 h-32 rounded-full bg-teal-500/10 hidden lg:block animate-pulse"
+        style={{ animationDuration: "6s" }}
+      />
 
-      <div className="absolute w-3/4 md:w-7/8 left-4 md:left-24 bottom-4 rounded-xl" />
+      <div className="absolute w-3/4 md:w-7/8 left-4 md:left-24 bottom-4 rounded-3xl" />
 
       <div className="container mx-auto px-4 lg:px-6 relative z-10 h-full flex flex-col">
-        {/* Hero content */}
+        {/* Hero content with animations */}
         <div className="flex flex-row items-center justify-between h-full pb-24">
           <div className="w-full lg:w-2/5 text-left pt-12">
             <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
-              One Platform.
+              <span className="inline-block transform transition-all duration-700 hover:scale-105">
+                One Platform.
+              </span>
               <br />
-              <span className="text-teal-50">Local Services.</span>
+              <span className="text-teal-50 inline-block transform transition-all duration-700 hover:scale-105">
+                Local Services.
+              </span>
               <br />
-              <span className="bg-teal-700 px-2 py-1 inline-block mt-2 shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-[1.02] ">
+              <span className="bg-teal-700 px-4 py-2 inline-block mt-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 hover:scale-105">
                 Endless Possibilities
               </span>
             </h1>
-            <p className="text-white/90 mt-6 text-lg max-w-md">
+            <p className="text-white/90 mt-8 text-lg max-w-md leading-relaxed">
               Discover and connect with the best local businesses in your area.
               All in one place.
             </p>
           </div>
 
           <div className="hidden lg:block lg:w-3/5 relative h-full">
-            <div className="absolute top-24 left-28 bg-teal-700 text-white p-5 rounded-xl shadow-xl z-20 transform hover:scale-105 transition-transform">
+            <div className="absolute top-24 left-28 bg-teal-700 text-white p-5 rounded-2xl shadow-xl z-20 transform hover:scale-105 transition-transform duration-300 cursor-pointer">
               <div className="flex items-start gap-3">
                 <Store className="h-7 w-7 text-white shrink-0" />
                 <div>
@@ -206,27 +219,27 @@ export default function HeroSection() {
               <img
                 src="https://res.cloudinary.com/df622sxkk/image/upload/v1746737951/33128af806068df8106cc0165dd18bb5e5b055b2_slixx2.png"
                 alt="Person using app"
-                className="object-contain h-full"
+                className="object-contain h-full transform transition-transform duration-700 hover:scale-105"
               />
             </div>
           </div>
         </div>
 
-        {/* Search Bar Section */}
+        {/* Search Bar Section - Rounded and with animations */}
         <div
           ref={searchContainerRef}
           className="absolute bottom-12 left-0 right-0 px-4 md:px-6 w-full z-40"
         >
-          <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-6xl transition-all duration-300 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-6xl transition-all duration-500 hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]">
             <div className="flex flex-col lg:flex-row">
               {/* Search Keyword Field */}
-              <div className="flex-1 p-4 lg:p-5 border-b lg:border-b-0 lg:border-r border-gray-100">
+              <div className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 transition-all duration-300 hover:bg-gray-50/50">
                 <div className="flex items-center gap-3">
                   <Search className="h-5 w-5 text-teal-700" />
                   <input
                     type="text"
                     placeholder="Search Keyword..."
-                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-sm lg:text-base"
+                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -236,7 +249,7 @@ export default function HeroSection() {
 
               {/* Location Field */}
               <div
-                className="flex-1 p-4 lg:p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative"
+                className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative transition-all duration-300 hover:bg-gray-50/50"
                 ref={locationRef}
               >
                 <div
@@ -248,7 +261,7 @@ export default function HeroSection() {
                     ref={locationInputRef}
                     type="text"
                     placeholder="Search Location..."
-                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-sm lg:text-base"
+                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
                     value={location}
                     onChange={(e) => {
                       setLocation(e.target.value);
@@ -274,7 +287,7 @@ export default function HeroSection() {
                 </div>
 
                 {isLocationDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-lg z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-200 origin-bottom">
+                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-300 origin-bottom">
                     {isLoading ? (
                       <div className="p-3 text-center text-gray-500">
                         Loading...
@@ -283,7 +296,7 @@ export default function HeroSection() {
                       cities.map((city, index) => (
                         <div
                           key={index}
-                          className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors flex items-center"
+                          className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
                           onClick={() => selectCity(city)}
                         >
                           <MapPin className="h-4 w-4 text-teal-600 mr-2 opacity-70" />
@@ -301,7 +314,7 @@ export default function HeroSection() {
 
               {/* Category Field */}
               <div
-                className="flex-1 p-4 lg:p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative"
+                className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative transition-all duration-300 hover:bg-gray-50/50"
                 ref={categoryRef}
               >
                 <div
@@ -322,7 +335,7 @@ export default function HeroSection() {
                         strokeLinecap="round"
                       />
                     </svg>
-                    <span className="text-gray-700 text-sm lg:text-base whitespace-nowrap overflow-hidden text-ellipsis">
+                    <span className="text-gray-700 text-base whitespace-nowrap overflow-hidden text-ellipsis">
                       {category}
                     </span>
                   </div>
@@ -335,11 +348,11 @@ export default function HeroSection() {
 
                 {/* Category Dropdown (shows upward) */}
                 {isCategoryDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-lg z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-200 origin-bottom">
+                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-300 origin-bottom">
                     {categories.map((cat, index) => (
                       <div
                         key={index}
-                        className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors flex items-center"
+                        className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
                         onClick={() => selectCategory(cat)}
                       >
                         <svg
@@ -362,14 +375,25 @@ export default function HeroSection() {
                 )}
               </div>
 
-              {/* Search Button */}
               <div
-                className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-4 lg:px-8 lg:py-5 flex items-center justify-center cursor-pointer rounded-b-xl md:rounded-bl-none md:rounded-r-xl group"
+                className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-5 flex items-center justify-center cursor-pointer rounded-b-xl md:rounded-bl-none md:rounded-r-xl group"
                 onClick={handleSearch}
+                onMouseEnter={() => setIsSearchHovered(true)}
+                onMouseLeave={() => setIsSearchHovered(false)}
               >
-                <button className="text-white font-medium flex items-center text-sm lg:text-base whitespace-nowrap">
-                  <Search className="h-5 w-5 mr-2 group-hover:animate-pulse" />{" "}
-                  Search Now
+                <button className="text-white font-medium flex items-center text-base whitespace-nowrap">
+                  <Search
+                    className={`h-5 w-5 mr-2 ${
+                      isSearchHovered ? "animate-pulse" : ""
+                    }`}
+                  />{" "}
+                  <span
+                    className={`transition-transform duration-300 cursor-pointer ${
+                      isSearchHovered ? "transform translate-x-1" : ""
+                    }`}
+                  >
+                    Search Now
+                  </span>
                 </button>
               </div>
             </div>

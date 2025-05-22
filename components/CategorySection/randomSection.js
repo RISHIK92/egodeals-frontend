@@ -15,13 +15,20 @@ export default function RandomListingsSection() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pin, setPin] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
+    const userLocation =
+      typeof window !== "undefined"
+        ? localStorage.getItem("userLocation")
+        : null;
+    setPin(userLocation);
+
     const fetchRandomListings = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/random`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/random?pincode=${userLocation}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch listings");
@@ -82,9 +89,18 @@ export default function RandomListingsSection() {
     <div className="py-16 px-4 bg-gradient-to-b from-[#F8F9FA] to-[#EDF0F2]">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-800">
-            Randomly Selected{" "}
-            <span className="font-normal text-teal-700">Listings</span>
+          <h2 className="text-3xl font-semibold text-gray-800">
+            {pin ? (
+              <>
+                Businesses Near{" "}
+                <span className="font-normal text-teal-700">You</span>
+              </>
+            ) : (
+              <>
+                Randomly Selected{" "}
+                <span className="font-normal text-teal-700">Listings</span>
+              </>
+            )}
           </h2>
           <a
             href="/businesses"
@@ -107,6 +123,7 @@ export default function RandomListingsSection() {
                     )
                   }
                 >
+                  {console.log(listing)}
                   <div className="relative">
                     <img
                       src={listing.imageSrc}

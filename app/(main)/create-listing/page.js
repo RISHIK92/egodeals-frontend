@@ -57,6 +57,9 @@ export default function CreateListing() {
     teamSize: "",
     rating: "",
     reviewCount: "",
+    youtubeVideo: "",
+    locationUrl: "",
+    serviceRadius: null,
   });
 
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -74,25 +77,31 @@ export default function CreateListing() {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [createdListingId, setCreatedListingId] = useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [categoriesRes, citiesRes, userRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/cities`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/check-auth`, {
-            credentials: "include",
-          }),
-        ]);
+        const [categoriesRes, citiesRes, userRes, plansRes] = await Promise.all(
+          [
+            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`),
+            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/cities`),
+            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/check-auth`, {
+              credentials: "include",
+            }),
+            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/subscription-plans`),
+          ]
+        );
 
         const categoriesData = await categoriesRes.json();
         const citiesData = await citiesRes.json();
         const userData = await userRes.json();
+        const plansData = await plansRes.json();
 
         setCategories(categoriesData);
         setCities(citiesData);
         setUser(userData.user);
+        setSubscriptionPlans(plansData);
 
         if (userData.user) {
           setFormData((prev) => ({
@@ -289,11 +298,12 @@ export default function CreateListing() {
     setError("");
 
     try {
+      // 1. Upload photos if any
       // let uploadedPhotoUrls = [];
       // if (formData.photos.length > 0) {
       //   const uploadFormData = new FormData();
       //   formData.photos.forEach((photo) => {
-      //     uploadFormData.append("photos", photo.file); // Changed from "files" to "photos"
+      //     uploadFormData.append("photos", photo.file);
       //   });
 
       //   const bannerIndex = formData.photos.findIndex(
@@ -318,19 +328,16 @@ export default function CreateListing() {
       //   uploadedPhotoUrls = uploadData.urls;
       // }
 
-      // Map pricing option to backend values
-      const listingTierMap = {
-        Free: "FREE",
-        PREMIUM: "PREMIUM",
-        PREMIUM_PLUS: "PREMIUM_PLUS",
-      };
+      // 2. Get selected subscription plan
+      const selectedPlan = subscriptionPlans.find(
+        (plan) => plan.tierType === formData.pricingOption
+      );
 
-      const subscriptionIdMap = {
-        Free: "1",
-        PREMIUM: "2",
-        PREMIUM_PLUS: "3",
-      };
+      if (!selectedPlan) {
+        throw new Error("Selected pricing plan not found");
+      }
 
+      // 3. Prepare listing data
       const listingData = {
         category: formData.category,
         type: formData.type,
@@ -344,18 +351,23 @@ export default function CreateListing() {
         email: formData.email,
         phone: formData.phone,
         hidePhone: formData.hidePhone,
-        listingTier: listingTierMap[formData.pricingOption] || "FREE",
+        listingTier: selectedPlan.tierType,
         website: formData.website,
-        businessHours: JSON.stringify(formData.businessHours), // Stringify business hours
+        businessHours: JSON.stringify(formData.businessHours),
         businessCategory: formData.businessCategory,
         establishedYear: formData.establishedYear,
         serviceArea: formData.serviceArea,
         teamSize: formData.teamSize,
         rating: formData.rating,
         reviewCount: formData.reviewCount,
-        subscriptionId: subscriptionIdMap[formData.pricingOption] || "1",
+        subscriptionId: selectedPlan.id,
+        // photos: uploadedPhotoUrls,
+        youtubeVideo: formData.youtubeVideo,
+        locationUrl: formData.locationUrl,
+        serviceRadius: formData.serviceRadius,
       };
 
+      // 4. Submit listing data
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings`,
         {
@@ -370,21 +382,24 @@ export default function CreateListing() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(err.message || "Failed to create listing");
+        throw new Error(errorData.message || "Failed to create listing");
       }
 
       const result = await response.json();
-      setCreatedListingId(result.listing.id); // Changed from result.id to result.listing.id
+      setCreatedListingId(result.listing.id);
 
+      // 5. Handle payment flow if needed
       if (formData.pricingOption === "FREE") {
         setIsSuccess(true);
+        toast.success("Listing created successfully!");
       } else {
-        setPaymentAmount(formData.pricingOption === "PREMIUM" ? 850 : 15000);
+        setPaymentAmount(parseFloat(selectedPlan.price) * 100);
         setShowPayment(true);
       }
     } catch (err) {
       console.error("Submission error:", err);
       toast.error(err.message || "Failed to create listing");
+      setError(err.message || "An error occurred during submission");
     } finally {
       setIsLoading(false);
     }
@@ -710,6 +725,81 @@ export default function CreateListing() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Business Details
               </h3>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  YouTube Video Link
+                </label>
+                <input
+                  type="url"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.youtubeVideo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, youtubeVideo: e.target.value })
+                  }
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Add a YouTube video showcasing your business (optional)
+                </p>
+              </div>
+
+              {/* Location URL */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location URL <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.locationUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, locationUrl: e.target.value })
+                  }
+                  placeholder="https://maps.google.com/..."
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Google Maps or other location service URL (required)
+                </p>
+              </div>
+
+              {/* Service Radius */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Service Radius
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-24 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                    value={formData.serviceRadius || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        serviceRadius: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                  />
+                  <span className="ml-2 text-gray-500">kilometers</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, serviceRadius: null })
+                    }
+                    className="ml-4 text-sm text-teal-600 hover:text-teal-900 cursor-pointer"
+                  >
+                    Set no limit
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  How far you're willing to promote your services (leave empty
+                  for no limit)
+                </p>
+              </div>
 
               {/* Phone */}
               <div className="mb-4">
@@ -1224,95 +1314,47 @@ export default function CreateListing() {
               </div>
 
               <div className="divide-y divide-gray-200">
-                <label className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="pricingOption"
-                      value="FREE"
-                      checked={formData.pricingOption === "FREE"}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pricingOption: e.target.value,
-                        })
-                      }
-                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300"
-                    />
-                    <div className="ml-3">
-                      <span className="block text-sm font-medium text-gray-700">
-                        Free Listing
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        Basic visibility
-                      </span>
+                {subscriptionPlans.map((plan) => (
+                  <label
+                    key={plan.id}
+                    className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="pricingOption"
+                        value={plan.tierType}
+                        checked={formData.pricingOption === plan.tierType}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            pricingOption: e.target.value,
+                          })
+                        }
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300"
+                      />
+                      <div className="ml-3">
+                        <span className="block text-sm font-medium text-gray-700">
+                          {plan.name}
+                        </span>
+                        <span className="block text-sm text-gray-500">
+                          {plan.description}
+                        </span>
+                        <span className="block text-xs text-gray-400 mt-1">
+                          Duration: {plan.durationDays} days • Promotion:{" "}
+                          {plan.promotionDays} days
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    ₹ 0.00
-                  </span>
-                </label>
-
-                <label className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="pricingOption"
-                      value="PREMIUM"
-                      checked={formData.pricingOption === "PREMIUM"}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pricingOption: e.target.value,
-                        })
-                      }
-                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300"
-                    />
-                    <div className="ml-3">
-                      <span className="block text-sm font-medium text-gray-700">
-                        Top page Listing Upgrade
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        Higher visibility in search results
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    ₹ 8.50
-                  </span>
-                </label>
-
-                <label className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="pricingOption"
-                      value="PREMIUM_PLUS"
-                      checked={formData.pricingOption === "PREMIUM_PLUS"}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pricingOption: e.target.value,
-                        })
-                      }
-                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300"
-                    />
-                    <div className="ml-3">
-                      <span className="block text-sm font-medium text-gray-700">
-                        Top page Ad+ Upgrade
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        Featured placement and priority ranking
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    ₹ 150.00
-                  </span>
-                </label>
+                    <span className="text-sm font-medium text-gray-900">
+                      ₹ {plan.price}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 
+            {/* Rest of the pricing section remains the same */}
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
                 <HelpCircle className="h-5 w-5 text-blue-500 mr-2" />

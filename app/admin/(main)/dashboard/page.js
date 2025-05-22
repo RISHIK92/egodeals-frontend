@@ -16,6 +16,8 @@ import {
   Bell,
   Settings,
   LogOut,
+  BadgeIndianRupee,
+  Gift,
 } from "lucide-react";
 
 const MenuItem = ({
@@ -141,11 +143,16 @@ export const Sidebar = ({ adminData }) => {
       permission: "MANAGE_FEATURED",
     },
     {
-      href: "/admin/settings",
-      icon: Settings,
-      label: "Settings",
+      href: "/admin/offer",
+      icon: Gift,
+      label: "Offer Zone",
       hasSubmenu: false,
-      permission: null, // No specific permission needed
+    },
+    {
+      href: "/admin/subscription",
+      icon: BadgeIndianRupee,
+      label: "Subscription Plans",
+      hasSubmenu: false,
     },
   ];
 

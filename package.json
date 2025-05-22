@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
+    "framer-motion": "^12.12.1",
     "leaflet": "^1.9.4",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.507.0",
@@ -17,7 +18,9 @@
     "radix-ui": "^1.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
     "react-leaflet": "^5.0.0",
+    "react-share": "^5.2.2",
     "react-toastify": "^11.0.5",
     "tailwind-merge": "^3.2.0"
   },

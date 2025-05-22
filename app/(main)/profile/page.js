@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import {
   ChevronRight,
-  Heart,
+  Bookmark,
   Archive,
   Clock,
   MessageSquare,
@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("myListings");
@@ -28,11 +29,13 @@ export default function ProfilePage() {
     favorites: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [payments, setPayments] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
     fetchProfileData();
     fetchListings();
+    fetchPayments();
   }, []);
 
   const fetchProfileData = async () => {
@@ -89,6 +92,23 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/payment`,
+        {
+          credentials: "include",
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setPayments(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/logout`, {
@@ -122,11 +142,11 @@ export default function ProfilePage() {
       if (response.ok) {
         const updatedProfile = await response.json();
         setProfileData(updatedProfile);
-        alert("Profile updated successfully");
+        toast.success("Profile updated successfully");
       }
     } catch (error) {
       console.error("Update profile error:", error);
-      alert("Error updating profile");
+      toast.error("Error updating profile");
     }
   };
 
@@ -152,15 +172,15 @@ export default function ProfilePage() {
       );
 
       if (response.ok) {
-        alert("Password changed successfully");
+        toast.success("Password changed successfully");
         e.target.reset();
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Error changing password");
+        toast.error(errorData.message || "Error changing password");
       }
     } catch (error) {
       console.error("Change password error:", error);
-      alert("Error changing password");
+      toast.error("Error changing password");
     }
   };
 
@@ -179,26 +199,47 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Delete account error:", error);
-      alert("Error deleting account");
+      toast.error("Error deleting account");
     }
   };
 
   const toggleFavorite = async (listingId, isFavorite) => {
     try {
-      const endpoint = isFavorite ? "favorite" : "unfavorite";
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/${listingId}/${endpoint}`,
-        {
-          method: isFavorite ? "POST" : "DELETE",
-          credentials: "include",
-        }
-      );
+      const method = isFavorite ? "DELETE" : "POST";
+      const endpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/${listingId}/favorite`;
+
+      const response = await fetch(endpoint, {
+        method,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
-        fetchListings(); // Refresh favorites list
+        // Optimistically update the UI
+        setListings((prev) => {
+          const updatedFavorites = isFavorite
+            ? prev.favorites.filter((item) => item.id !== listingId)
+            : [
+                ...prev.favorites,
+                prev.myListings.find((item) => item.id === listingId) ||
+                  prev.pendingApproval.find((item) => item.id === listingId) ||
+                  prev.archived.find((item) => item.id === listingId),
+              ];
+
+          return {
+            ...prev,
+            favorites: updatedFavorites,
+          };
+        });
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to update favorite");
       }
     } catch (error) {
       console.error("Favorite toggle error:", error);
+      toast.error("Error updating favorite");
     }
   };
 
@@ -346,7 +387,7 @@ export default function ProfilePage() {
                   }`}
                 >
                   <div className="flex items-center">
-                    <Heart className="h-4 w-4 mr-2" />
+                    <Bookmark className="h-4 w-4 mr-2" />
                     Favourite listings
                   </div>
                   <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">
@@ -367,8 +408,7 @@ export default function ProfilePage() {
                       ? "bg-teal-50 text-teal-700"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
-                >
-                </button>
+                ></button>
 
                 <button
                   onClick={() => setActiveTab("transactions")}
@@ -383,7 +423,7 @@ export default function ProfilePage() {
                     Transactions
                   </div>
                   <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">
-                    0
+                    {payments.length}
                   </span>
                 </button>
               </div>
@@ -442,6 +482,7 @@ export default function ProfilePage() {
                 </button>
               </div>
 
+              {console.log(listings.myListings[0])}
               {listings.myListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {listings.myListings.map((listing) => (
@@ -538,11 +579,10 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Favorite Listings */}
           {activeTab === "favorites" && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Favourite Listings
+                Saved Listings
               </h2>
 
               {listings.favorites.length > 0 ? (
@@ -551,19 +591,19 @@ export default function ProfilePage() {
                     <ListingCard
                       key={listing.id}
                       listing={listing}
-                      isFavorite
-                      onFavoriteToggle={() => toggleFavorite(listing.id, false)}
+                      isFavorite={listing.isFavorite || true}
+                      onFavoriteToggle={() => toggleFavorite(listing.id, true)}
                     />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Heart className="mx-auto h-12 w-12 text-gray-400" />
+                  <Bookmark className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    No favorite listings
+                    No saved listings
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    You haven't saved any listings to your favorites yet.
+                    You haven't saved any listings yet.
                   </p>
                 </div>
               )}
@@ -588,21 +628,84 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Transactions */}
           {activeTab === "transactions" && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Transactions
               </h2>
-              <div className="text-center py-12">
-                <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  No transactions
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  You don't have any transactions yet.
-                </p>
-              </div>
+
+              {payments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Listing
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Method
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {payments.map((payment) => (
+                        <tr key={payment.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(payment.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {payment.listing.title}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {payment.listing.tier}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment.currency} {payment.amount}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    ${
+                      payment.status === "COMPLETED"
+                        ? "bg-green-100 text-green-800"
+                        : payment.status === "PENDING"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                            >
+                              {payment.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment.paymentMethod}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    No transactions
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    You don't have any transactions yet.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -691,7 +794,7 @@ export default function ProfilePage() {
                   <div className="flex justify-end mt-6">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700"
+                      className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 cursor-pointer"
                     >
                       Save Changes
                     </button>
@@ -741,7 +844,7 @@ export default function ProfilePage() {
                     <div className="flex justify-end mt-6">
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700"
+                        className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 cursor-pointer"
                       >
                         Change Password
                       </button>
@@ -804,6 +907,18 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }
@@ -812,7 +927,7 @@ function ListingCard({
   listing,
   isPending,
   isArchived,
-  isFavorite,
+  isFavorite = listing.isFavorite,
   onArchive,
   onDelete,
   onReactivate,
@@ -820,12 +935,26 @@ function ListingCard({
 }) {
   const router = useRouter();
 
+  const handleFavoriteToggle = (e) => {
+    e.stopPropagation();
+    if (onFavoriteToggle) {
+      onFavoriteToggle(listing.id, isFavorite);
+    }
+  };
+
+  // Safely get the first image URL
+  const firstImageUrl = listing.images?.[0]?.url || null;
+
+  // Safely get the city name (in case it's an object)
+  const cityName =
+    typeof listing.city === "object" ? listing.city.name : listing.city;
+
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative h-48 bg-gray-100">
-        {listing.images?.length > 0 ? (
+        {firstImageUrl ? (
           <img
-            src={listing.images[0].url}
+            src={firstImageUrl}
             alt={listing.title}
             className="w-full h-full object-cover"
           />
@@ -836,9 +965,9 @@ function ListingCard({
         )}
         <button
           className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm"
-          onClick={onFavoriteToggle}
+          onClick={handleFavoriteToggle}
         >
-          <Heart
+          <Bookmark
             className={`h-5 w-5 ${
               isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
             }`}
@@ -854,7 +983,7 @@ function ListingCard({
         </div>
         <div className="mt-1 flex items-center text-sm text-gray-500">
           <MapPin className="h-4 w-4 mr-1" />
-          {listing.city}
+          {cityName}
         </div>
         <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
           <span>

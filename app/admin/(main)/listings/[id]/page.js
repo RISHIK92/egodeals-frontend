@@ -18,7 +18,7 @@ import { ToastContainer, toast } from "react-toastify";
 const ListingDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
-  const [listing, setListing] = useState();
+  const [listing, setListing] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -27,7 +27,7 @@ const ListingDetailPage = () => {
   useEffect(() => {
     const fetchListing = async () => {
       try {
-        const response = await fetch(`${backendUrl}/admin/listings/${id}`, {
+        const response = await fetch(`${backendUrl}/listing/${id}`, {
           credentials: "include",
         });
 
@@ -169,27 +169,39 @@ const ListingDetailPage = () => {
   const formatBusinessHours = () => {
     if (!listing?.businessHours) return null;
 
-    const days = [
-      { key: "weekdays", label: "Weekdays" },
-      { key: "saturday", label: "Saturday" },
-      { key: "sunday", label: "Sunday" },
-    ];
+    try {
+      const hours =
+        typeof listing.businessHours === "string"
+          ? JSON.parse(listing.businessHours)
+          : listing.businessHours;
 
-    return days.map((day) => {
-      const hours = listing.businessHours[day.key];
-      if (!hours || (!hours.open && !hours.close)) return null;
+      const days = [
+        { key: "weekdays", label: "Weekdays" },
+        { key: "saturday", label: "Saturday" },
+        { key: "sunday", label: "Sunday" },
+      ];
 
+      return days.map((day) => {
+        const dayHours = hours[day.key];
+        if (!dayHours || (!dayHours.open && !dayHours.close)) return null;
+
+        return (
+          <div key={day.key} className="flex items-center text-sm">
+            <span className="w-24 font-medium text-gray-500">{day.label}</span>
+            <span className="text-gray-900">
+              {dayHours.open && dayHours.close
+                ? `${dayHours.open} - ${dayHours.close}`
+                : "Closed"}
+            </span>
+          </div>
+        );
+      });
+    } catch (error) {
+      console.error("Error parsing business hours:", error);
       return (
-        <div key={day.key} className="flex items-center text-sm">
-          <span className="w-24 font-medium text-gray-500">{day.label}</span>
-          <span className="text-gray-900">
-            {hours.open && hours.close
-              ? `${hours.open} - ${hours.close}`
-              : "Closed"}
-          </span>
-        </div>
+        <p className="text-sm text-red-500">Error displaying business hours</p>
       );
-    });
+    }
   };
 
   const formatPromotions = () => {
@@ -220,6 +232,176 @@ const ListingDetailPage = () => {
       </div>
     ));
   };
+
+  const renderImages = () => {
+    if (!listing?.images || listing.images.length === 0) {
+      return (
+        <div className="col-span-2 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg text-gray-500">
+          <ImageIcon className="w-8 h-8" />
+          <p className="mt-2 text-sm">No images</p>
+        </div>
+      );
+    }
+
+    return listing.images.map((image) => (
+      <div
+        key={image.id}
+        className="relative aspect-square bg-gray-200 rounded-md overflow-hidden"
+      >
+        <img
+          src={image.url}
+          alt={`Listing image`}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/placeholder-image.jpg";
+          }}
+        />
+        {image.isPrimary && (
+          <span className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+            Primary
+          </span>
+        )}
+        {image.isBanner && (
+          <span className="absolute top-2 right-2 bg-orange-600 text-white text-xs px-2 py-1 rounded">
+            Banner
+          </span>
+        )}
+      </div>
+    ));
+  };
+
+  const renderAdditionalDetails = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <p className="text-sm text-gray-500">Price</p>
+        <p className="text-sm font-medium text-gray-900">
+          ₹{listing.price?.toLocaleString() || "N/A"}
+          {listing.negotiable && (
+            <span className="ml-2 text-xs text-gray-500">(Negotiable)</span>
+          )}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Phone</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.phone || "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Website</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.website ? (
+            <a
+              href={
+                listing.website.startsWith("http")
+                  ? listing.website
+                  : `https://${listing.website}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center"
+            >
+              {listing.website}
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          ) : (
+            "N/A"
+          )}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Expires At</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.expiresAt
+            ? new Date(listing.expiresAt).toLocaleDateString()
+            : "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Created At</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.createdAt
+            ? new Date(listing.createdAt).toLocaleString()
+            : "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Last Updated</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.updatedAt
+            ? new Date(listing.updatedAt).toLocaleString()
+            : "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Service Area</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.serviceArea || "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Service Radius</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.serviceRadius ? `${listing.serviceRadius} km` : "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Youtube Video</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.youtubeVideo ? (
+            <a
+              href={listing.youtubeVideo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center"
+            >
+              Watch Video
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          ) : (
+            "N/A"
+          )}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Location URL</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.locationUrl ? (
+            <a
+              href={listing.locationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center"
+            >
+              View Location
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          ) : (
+            "N/A"
+          )}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Established Year</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.establishedYear || "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Team Size</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.teamSize || "N/A"}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">View Count</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.viewCount || 0}
+        </p>
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -274,7 +456,7 @@ const ListingDetailPage = () => {
               </button>
             </>
           )}
-          <button
+          {/* <button
             onClick={handleFeature}
             disabled={isProcessing}
             className={`flex items-center px-4 py-2 ${
@@ -285,7 +467,7 @@ const ListingDetailPage = () => {
           >
             <Star className="w-5 h-5 mr-1" />
             {isProcessing ? "Processing..." : "Feature"}
-          </button>
+          </button> */}
           <button
             onClick={handleDelete}
             disabled={isProcessing}
@@ -308,6 +490,7 @@ const ListingDetailPage = () => {
               </h2>
               <p className="text-sm text-gray-500">
                 {listing.category?.name || "N/A"} • {listing.type}
+                {listing.businessCategory && ` • ${listing.businessCategory}`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -377,65 +560,7 @@ const ListingDetailPage = () => {
 
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Details</h3>
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Price</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      ₹{listing.price.toLocaleString()}
-                      {listing.negotiable && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          (Negotiable)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {listing.phone || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Website</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {listing.website ? (
-                        <a
-                          href={
-                            listing.website.startsWith("http")
-                              ? listing.website
-                              : `https://${listing.website}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center"
-                        >
-                          {listing.website}
-                          <ExternalLink className="w-3 h-3 ml-1" />
-                        </a>
-                      ) : (
-                        "N/A"
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Expires At</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {new Date(listing.expiresAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Created At</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {new Date(listing.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Last Updated</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {new Date(listing.updatedAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+                {renderAdditionalDetails()}
               </div>
             </div>
 
@@ -445,57 +570,37 @@ const ListingDetailPage = () => {
                 <div className="mt-2 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
-                      {listing.user.firstName?.charAt(0) || "?"}
-                      {listing.user.lastName?.charAt(0) || ""}
+                      {listing.user?.firstName?.charAt(0) || "?"}
+                      {listing.user?.lastName?.charAt(0) || ""}
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900">
-                        {listing.user.firstName} {listing.user.lastName}
+                        {listing.user?.firstName} {listing.user?.lastName}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {listing.user.email || "No email provided"}
+                        {listing.user?.email || "No email provided"}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {listing.user.phone || "No phone provided"}
+                        {listing.user?.phone || "No phone provided"}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  Promotions
-                </h3>
-                <div className="mt-2">{formatPromotions()}</div>
-              </div>
+              {listing.promotions && listing.promotions.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Promotions
+                  </h3>
+                  <div className="mt-2">{formatPromotions()}</div>
+                </div>
+              )}
 
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Images</h3>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  {listing.ListingImage?.length > 0 ? (
-                    listing.ListingImage.map((image, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square bg-gray-200 rounded-md overflow-hidden"
-                      >
-                        <img
-                          src={image.url}
-                          alt={`Listing image ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "/placeholder-image.jpg";
-                          }}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-2 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg text-gray-500">
-                      <ImageIcon className="w-8 h-8" />
-                      <p className="mt-2 text-sm">No images</p>
-                    </div>
-                  )}
+                  {renderImages()}
                 </div>
               </div>
             </div>

@@ -1,9 +1,9 @@
-// components/FullWidthBanner/fullWidthBanner.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Image from "next/image";
+import { BannerSkeleton } from "./BannerSkeleton";
 
 export default function FullWidthBanner({ staticImage }) {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -11,12 +11,19 @@ export default function FullWidthBanner({ staticImage }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch banners from API
+    const userLocation =
+      typeof window !== "undefined"
+        ? localStorage.getItem("userLocation")
+        : null;
+
+    // Fetch banners from API with pincode if available
     const fetchBanners = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`
-        );
+        const url = userLocation
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners?location=${userLocation}`
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`;
+
+        const response = await fetch(url);
         const data = await response.json();
         setBanners(data);
         setIsLoading(false);
@@ -55,12 +62,9 @@ export default function FullWidthBanner({ staticImage }) {
     );
   }
 
+  // Show skeleton while loading
   if (isLoading) {
-    return (
-      <div className="w-full py-12 bg-gradient-to-b from-[#EC5944] to-[#FFAEA2]">
-        <div className="max-w-7xl mx-auto px-6">Loading banners...</div>
-      </div>
-    );
+    return <BannerSkeleton />;
   }
 
   if (banners.length === 0) {

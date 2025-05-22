@@ -4,6 +4,7 @@ import Image from "next/image";
 import CategorySection from "@/components/CategorySection/categorySection";
 import FullWidthBanner from "@/components/FullWidthBanner/fullWidthBanner";
 import RandomListingsSection from "@/components/CategorySection/randomSection";
+import OfferZoneSection from "@/components/CategorySection/offerZone";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
       <FullWidthBanner
       // image={"https://egodeals.com/data/banners/1737541263.png"}
       />
+      <OfferZoneSection />
       <CategorySection />
       <FullWidthBanner />
       <RandomListingsSection />
