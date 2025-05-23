@@ -31,7 +31,6 @@ export default function LocationMap({ locationUrl }) {
         console.log("API Response:", data); // Debug log
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch location data");
         }
 
         setState({
