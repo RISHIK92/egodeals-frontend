@@ -26,6 +26,7 @@ const OfferZonePage = () => {
     promoCode: "",
     description: "",
     validUntil: "",
+    link: "",
     rating: 0,
     isActive: true,
   });
@@ -36,6 +37,7 @@ const OfferZonePage = () => {
     promoCode: "",
     description: "",
     validUntil: "",
+    link: "",
     rating: 0,
     isActive: true,
   });
@@ -103,6 +105,7 @@ const OfferZonePage = () => {
         promoCode: "",
         description: "",
         validUntil: "",
+        link: "",
         rating: 0,
         isActive: true,
       });
@@ -204,6 +207,7 @@ const OfferZonePage = () => {
       vendorName: offer.vendorName,
       discount: offer.discount,
       promoCode: offer.promoCode || "",
+      link: offer.link || "",
       description: offer.description || "",
       validUntil: offer.validUntil.split("T")[0],
       rating: offer.rating || 0,
@@ -286,6 +290,12 @@ const OfferZonePage = () => {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
+                  Link
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Valid Until
                 </th>
                 <th
@@ -360,6 +370,36 @@ const OfferZonePage = () => {
                       ) : (
                         <div className="text-sm text-gray-900">
                           {offer.promoCode || "-"}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {isEditing === offer.id ? (
+                        <input
+                          type="url"
+                          className="block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          value={editOffer.link}
+                          onChange={(e) =>
+                            setEditOffer({
+                              ...editOffer,
+                              link: e.target.value,
+                            })
+                          }
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900">
+                          {offer.link ? (
+                            <a
+                              href={offer.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              View Link
+                            </a>
+                          ) : (
+                            "-"
+                          )}
                         </div>
                       )}
                     </td>
@@ -466,7 +506,7 @@ const OfferZonePage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="7"
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No offers found
@@ -555,6 +595,27 @@ const OfferZonePage = () => {
                       })
                     }
                     placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="link"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Link
+                  </label>
+                  <input
+                    type="url"
+                    id="link"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={newOffer.link}
+                    onChange={(e) =>
+                      setNewOffer({
+                        ...newOffer,
+                        link: e.target.value,
+                      })
+                    }
+                    placeholder="https://example.com"
                   />
                 </div>
                 <div>

@@ -343,7 +343,7 @@ export default function OfferZoneSection() {
           <div className="text-center mt-8">
             <button
               onClick={() => setShowMore(!showMore)}
-              className="inline-flex items-center gap-2 bg-[#186667] text-white px-6 py-3 rounded-full font-semibold shadow-sm hover:shadow-lg transform hover:scale-105 transition-all duration-300 hover:bg-[#186667]/90"
+              className="inline-flex items-center gap-2 bg-[#186667] text-white px-6 py-3 rounded-full font-semibold shadow-sm hover:shadow-lg transform hover:scale-105 transition-all duration-300 hover:bg-[#186667]/90 cursor-pointer"
             >
               {showMore ? (
                 <>
