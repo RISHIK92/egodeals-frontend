@@ -15,6 +15,7 @@ import {
   Star,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -63,6 +64,7 @@ export default function OfferZoneSection() {
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/offer-zone`
         );
         if (!response.ok) {
+          throw new Error("Failed to fetch offers");
         }
         const data = await response.json();
 
@@ -113,6 +115,12 @@ export default function OfferZoneSection() {
     if (!isLoggedIn) {
       e.preventDefault();
       setShowLoginPrompt(true);
+      return;
+    }
+
+    if (offer.link) {
+      // Open link in new tab if it exists
+      window.open(offer.link, "_blank");
     }
   };
 
@@ -233,18 +241,27 @@ export default function OfferZoneSection() {
             )}
           </div>
 
-          {/* Valid until */}
-          {offer.validUntil && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-auto">
-              <Clock className="w-4 h-4" />
-              Valid until{" "}
-              {new Date(offer.validUntil).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </div>
-          )}
+          {/* Link and Valid until section */}
+          <div className="flex items-center justify-between mt-4">
+            {offer.validUntil && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Clock className="w-4 h-4" />
+                Valid until{" "}
+                {new Date(offer.validUntil).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </div>
+            )}
+
+            {isLoggedIn && offer.link && (
+              <div className="flex items-center gap-1 text-sm text-[#186667] font-medium">
+                Visit Site
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            )}
+          </div>
 
           {/* Login overlay for non-authenticated users */}
           {!isLoggedIn && (
@@ -265,7 +282,7 @@ export default function OfferZoneSection() {
     </div>
   );
 
-  if (isLoading || offers.length === 0) {
+  if (isLoading) {
     return (
       <div className="py-24 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-6xl mx-auto">

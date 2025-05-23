@@ -35,6 +35,14 @@ export default async function ListingPage({ params }) {
   const { id } = params;
   const { listing, similarListings } = await getListingDetails(id);
 
+  function extractYouTubeId(url) {
+    // Handle various YouTube URL formats
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  }
+
   if (!listing) {
     return (
       <div className="container-custom py-16 text-center">
@@ -176,6 +184,35 @@ export default async function ListingPage({ params }) {
             <div className="lg:col-span-2">
               {listing.description && (
                 <ProductDescription description={listing.description} />
+              )}
+
+              {listing.youtubeVideo && (
+                <div className="mt-6 bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">
+                      Video
+                    </h2>
+                    <div className="relative pt-[56.25%]">
+                      {" "}
+                      {/* 16:9 aspect ratio */}
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full rounded-md"
+                        src={`https://www.youtube.com/embed/${extractYouTubeId(
+                          listing.youtubeVideo
+                        )}?modestbranding=1&rel=0`}
+                        title={`${listing.title} video`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    {listing.videoDescription && (
+                      <p className="mt-4 text-gray-600">
+                        {listing.videoDescription}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
 
               {images.length > 0 && (
