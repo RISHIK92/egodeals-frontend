@@ -5,15 +5,17 @@ import CategorySection from "@/components/CategorySection/categorySection";
 import FullWidthBanner from "@/components/FullWidthBanner/fullWidthBanner";
 import RandomListingsSection from "@/components/CategorySection/randomSection";
 import OfferZoneSection from "@/components/CategorySection/offerZone";
+import AdminFullWidthBanner from "@/components/AdminBanner/adminFullWidthBanner";
 
 export default function Home() {
   return (
     <>
       {/* <Navbar /> */}
       <HeroSection />
-      <FullWidthBanner
+      <AdminFullWidthBanner />
+      {/* <FullWidthBanner
       // image={"https://egodeals.com/data/banners/1737541263.png"}
-      />
+      /> */}
       <OfferZoneSection />
       <CategorySection />
       <FullWidthBanner />

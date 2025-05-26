@@ -18,6 +18,7 @@ import {
   LogOut,
   BadgeIndianRupee,
   Gift,
+  Book,
 } from "lucide-react";
 
 const MenuItem = ({
@@ -114,7 +115,6 @@ export const Sidebar = ({ adminData }) => {
       icon: Users,
       label: "Users",
       hasSubmenu: false,
-      permission: "MANAGE_USERS",
     },
     {
       href: "/admin/categories",
@@ -152,6 +152,12 @@ export const Sidebar = ({ adminData }) => {
       href: "/admin/subscription",
       icon: BadgeIndianRupee,
       label: "Subscription Plans",
+      hasSubmenu: false,
+    },
+    {
+      href: "/admin/banners",
+      icon: Book,
+      label: "Banners",
       hasSubmenu: false,
     },
   ];
@@ -323,7 +329,6 @@ const Dashboard = () => {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch dashboard data");
         }
 
         const data = await response.json();

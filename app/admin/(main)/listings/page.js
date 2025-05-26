@@ -43,7 +43,8 @@ const ListingsPage = ({ defaultStatus = "" }) => {
           }
         );
 
-        if (!response.ok) throw new Error("Failed to fetch listings");
+        if (!response.ok) {
+        }
 
         const data = await response.json();
         setListings(data.listings);
