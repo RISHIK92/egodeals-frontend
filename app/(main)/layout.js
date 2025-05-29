@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { Edit, MapPin } from "lucide-react";
@@ -11,6 +11,24 @@ import "../globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 function Footer() {
+  const router = useRouter();
+  const [pages, setPages] = useState([]);
+
+  useEffect(() => {
+    async function fetchPages() {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/pages`
+        );
+        const data = await response.json();
+        setPages(data);
+      } catch (error) {
+        console.error("Failed to fetch pages:", error);
+      }
+    }
+    fetchPages();
+  }, []);
+
   return (
     <div className="w-full">
       {/* Top gradient border */}
@@ -33,6 +51,20 @@ function Footer() {
                   enhancing local business.
                 </p>
               </div>
+            </div>
+            <div className="mt-4">
+              <ul className="space-y-2 md:ml-8">
+                {pages.map((page) => (
+                  <li key={page.id}>
+                    <a
+                      href={`/${page.slug}`}
+                      className="hover:text-teal-700 text-md"
+                    >
+                      {page.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 

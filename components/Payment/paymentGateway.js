@@ -85,9 +85,10 @@ export default function PaymentGateway({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
-        name: "Your Marketplace",
+        name: "Ego Deals",
         description: getPaymentDescription(),
-        image: "/logo.png",
+        image:
+          "https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png",
         order_id: order.id,
         handler: async function (response) {
           try {

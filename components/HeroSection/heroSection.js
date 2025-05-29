@@ -1,9 +1,18 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronUp, Search, MapPin, Store } from "lucide-react";
+import {
+  ChevronUp,
+  Search,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Grid3X3,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function HeroSection() {
+  // Search bar states
   const [searchTerm, setSearchTerm] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("All Categories");
@@ -14,7 +23,10 @@ export default function HeroSection() {
     "Restaurants",
     "Shopping",
     "Services",
-  ]); // Default categories
+    "Healthcare",
+    "Entertainment",
+    "Education",
+  ]);
   const [cities, setCities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -22,7 +34,34 @@ export default function HeroSection() {
   const locationRef = useRef(null);
   const searchContainerRef = useRef(null);
   const locationInputRef = useRef(null);
-  const [isSearchHovered, setIsSearchHovered] = useState(false);
+
+  // Banner slider states
+  const [banners, setBanners] = useState([
+    {
+      id: 1,
+      imageUrl: "/placeholder.svg?height=650&width=1200",
+      alt: "Discover Local Businesses",
+      title: "Find Your Perfect Match",
+      subtitle: "Discover amazing local businesses in your area",
+    },
+    {
+      id: 2,
+      imageUrl: "/placeholder.svg?height=650&width=1200",
+      alt: "Connect with Services",
+      title: "Connect & Grow",
+      subtitle: "Build lasting relationships with trusted service providers",
+    },
+    {
+      id: 3,
+      imageUrl: "/placeholder.svg?height=650&width=1200",
+      alt: "Explore Opportunities",
+      title: "Explore Endless Possibilities",
+      subtitle: "From dining to shopping, find everything you need nearby",
+    },
+  ]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const bannerIntervalRef = useRef(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -37,12 +76,78 @@ export default function HeroSection() {
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
-        // Keep the default categories on error
       }
     };
 
     fetchCategories();
   }, []);
+
+  // Fetch banners from API if needed
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) setBanners(data);
+        }
+      } catch (error) {
+        console.error("Error fetching banners:", error);
+      }
+    };
+
+    fetchBanners();
+  }, []);
+
+  // Auto-slide banners
+  useEffect(() => {
+    startAutoSlide();
+    return () => stopAutoSlide();
+  }, []);
+
+  const startAutoSlide = () => {
+    bannerIntervalRef.current = setInterval(() => {
+      goToNextBanner();
+    }, 6000);
+  };
+
+  const stopAutoSlide = () => {
+    if (bannerIntervalRef.current) {
+      clearInterval(bannerIntervalRef.current);
+    }
+  };
+
+  const goToNextBanner = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentBannerIndex((prevIndex) =>
+        prevIndex === banners.length - 1 ? 0 : prevIndex + 1
+      );
+      setIsTransitioning(false);
+    }, 150);
+  };
+
+  const goToPrevBanner = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentBannerIndex((prevIndex) =>
+        prevIndex === 0 ? banners.length - 1 : prevIndex - 1
+      );
+      setIsTransitioning(false);
+    }, 150);
+  };
+
+  const goToBanner = (index) => {
+    if (index !== currentBannerIndex) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentBannerIndex(index);
+        setIsTransitioning(false);
+      }, 150);
+    }
+  };
 
   // Debounce function for location search
   useEffect(() => {
@@ -60,21 +165,16 @@ export default function HeroSection() {
   // Handle clicks outside dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
-      // Category dropdown handling
       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
         setIsCategoryDropdownOpen(false);
       }
 
-      // Location dropdown handling
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setIsLocationDropdownOpen(false);
       }
     }
 
-    // Add event listener
     document.addEventListener("mousedown", handleClickOutside);
-
-    // Clean up
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -83,12 +183,20 @@ export default function HeroSection() {
   const fetchCities = async (searchQuery) => {
     try {
       setIsLoading(true);
-      // For demo/testing purposes when API isn't available
       if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
         setTimeout(() => {
           setCities(
-            ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"].filter(
-              (city) => city.toLowerCase().includes(searchQuery.toLowerCase())
+            [
+              "New York",
+              "Los Angeles",
+              "Chicago",
+              "Houston",
+              "Phoenix",
+              "Philadelphia",
+              "San Antonio",
+              "San Diego",
+            ].filter((city) =>
+              city.toLowerCase().includes(searchQuery.toLowerCase())
             )
           );
           setIsLoading(false);
@@ -108,7 +216,6 @@ export default function HeroSection() {
       }
     } catch (error) {
       console.error("Error fetching cities:", error);
-      // Set some demo cities for testing when API fails
       setCities(["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"]);
     } finally {
       setIsLoading(false);
@@ -116,7 +223,6 @@ export default function HeroSection() {
   };
 
   const handleSearch = () => {
-    // Navigate to /businesses with query parameters
     const params = new URLSearchParams();
     if (searchTerm) params.set("search", searchTerm);
     if (location) params.set("location", location);
@@ -143,257 +249,270 @@ export default function HeroSection() {
   };
 
   const toggleCategoryDropdown = (e) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
-    // Close the other dropdown
     setIsLocationDropdownOpen(false);
   };
 
   const toggleLocationDropdown = (e) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     setIsLocationDropdownOpen(!isLocationDropdownOpen);
-    // Close the other dropdown
     setIsCategoryDropdownOpen(false);
   };
 
+  const currentBanner = banners[currentBannerIndex];
+
   return (
-    <div className="relative w-full overflow-hidden bg-gradient-to-br from-[#EC5944] via-[#ED7055] to-[#FFAEA2] h-[650px] before:content-[''] before:absolute before:inset-0 before:bg-[url('https://res.cloudinary.com/df622sxkk/image/upload/v1746738800/noise-texture_rlbvvs.png')] before:opacity-5 before:mix-blend-overlay">
-      {/* Background elements with more rounded corners */}
-      <div
-        className="absolute right-0 top-0 bottom-0 w-1/3 bg-teal-700 hidden lg:block"
-        style={{
-          borderRadius: "50% 0 0 70%",
-          opacity: 0.9,
-          transform: "translateX(5%)",
-          transition: "all 0.5s ease-out",
-        }}
-      />
+    <div className="relative w-full h-[700px] bg-gradient-to-br from-teal-50 to-teal-100 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_teal_1px,_transparent_0)] bg-[length:20px_20px]"></div>
+      </div>
 
-      {/* Animated abstract shapes */}
-      <div
-        className="absolute -left-20 top-20 w-64 h-64 rounded-full bg-white/10 hidden lg:block animate-pulse"
-        style={{ animationDuration: "8s" }}
-      />
-      <div
-        className="absolute right-1/3 bottom-1/4 w-32 h-32 rounded-full bg-teal-500/10 hidden lg:block animate-pulse"
-        style={{ animationDuration: "6s" }}
-      />
-
-      <div className="absolute w-3/4 md:w-7/8 left-4 md:left-24 bottom-4 rounded-3xl" />
-
-      <div className="container mx-auto px-4 lg:px-6 relative z-10 h-full flex flex-col">
-        {/* Hero content with animations */}
-        <div className="flex flex-row items-center justify-between h-full pb-24">
-          <div className="w-full lg:w-2/5 text-left pt-12">
-            <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
-              <span className="inline-block transform transition-all duration-700 hover:scale-105">
-                One Platform.
-              </span>
-              <br />
-              <span className="text-teal-50 inline-block transform transition-all duration-700 hover:scale-105">
-                Local Services.
-              </span>
-              <br />
-              <span className="bg-teal-700 px-4 py-2 inline-block mt-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 hover:scale-105">
-                Endless Possibilities
-              </span>
-            </h1>
-            <p className="text-white/90 mt-8 text-lg max-w-md leading-relaxed">
-              Discover and connect with the best local businesses in your area.
-              All in one place.
-            </p>
-          </div>
-
-          <div className="hidden lg:block lg:w-3/5 relative h-full">
-            <div className="absolute top-24 left-28 bg-teal-700 text-white p-5 rounded-2xl shadow-xl z-20 transform hover:scale-105 transition-transform duration-300 cursor-pointer">
-              <div className="flex items-start gap-3">
-                <Store className="h-7 w-7 text-white shrink-0" />
-                <div>
-                  <p className="font-bold text-xl">Found</p>
-                  <p className="text-lg">51 Tech stores in your locality.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute right-0 h-full flex items-center">
+      {/* Banner Slider */}
+      <div className="relative w-full h-full">
+        {/* Banner Images with Overlay */}
+        <div className="relative w-full h-full overflow-hidden">
+          {banners.map((banner, index) => (
+            <div
+              key={banner.id}
+              className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out ${
+                index === currentBannerIndex
+                  ? `opacity-100 scale-100 ${
+                      isTransitioning ? "blur-sm" : "blur-0"
+                    }`
+                  : "opacity-0 scale-105"
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-900/60 via-teal-800/40 to-transparent z-10"></div>
               <img
-                src="https://res.cloudinary.com/df622sxkk/image/upload/v1746737951/33128af806068df8106cc0165dd18bb5e5b055b2_slixx2.png"
-                alt="Person using app"
-                className="object-contain h-full transform transition-transform duration-700 hover:scale-105"
+                src={banner.imageUrl || "/placeholder.svg"}
+                alt={banner.alt}
+                className="w-full h-full object-contain"
+                loading="eager"
               />
+            </div>
+          ))}
+        </div>
+
+        {/* Hero Content */}
+        <div className="absolute inset-0 z-20 flex items-center">
+          <div className="container mx-auto px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <div
+                className={`transition-all duration-700 ${
+                  isTransitioning
+                    ? "opacity-0 translate-y-4"
+                    : "opacity-100 translate-y-0"
+                }`}
+              >
+                <h1 className="text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                  {currentBanner.title}
+                </h1>
+                <p className="text-xl lg:text-2xl text-teal-100 mb-8 leading-relaxed">
+                  {currentBanner.subtitle}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Search Bar Section - Rounded and with animations */}
-        <div
-          ref={searchContainerRef}
-          className="absolute bottom-12 left-0 right-0 px-4 md:px-6 w-full z-40"
+        {/* Navigation Arrows */}
+        <button
+          className="absolute left-6 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          onClick={() => {
+            stopAutoSlide();
+            goToPrevBanner();
+            startAutoSlide();
+          }}
+          aria-label="Previous banner"
         >
-          <div className="bg-white rounded-2xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-6xl transition-all duration-500 hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]">
-            <div className="flex flex-col lg:flex-row">
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          className="absolute right-6 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          onClick={() => {
+            stopAutoSlide();
+            goToNextBanner();
+            startAutoSlide();
+          }}
+          aria-label="Next banner"
+        >
+          <ChevronRight size={24} />
+        </button>
+
+        {/* Pagination Indicators */}
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 flex space-x-3">
+          {banners.map((_, index) => (
+            <button
+              key={index}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === currentBannerIndex
+                  ? "bg-white w-8 shadow-lg"
+                  : "bg-white/50 hover:bg-white/70 w-2"
+              }`}
+              onClick={() => {
+                stopAutoSlide();
+                goToBanner(index);
+                startAutoSlide();
+              }}
+              aria-label={`Go to banner ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Enhanced Search Bar */}
+      <div
+        ref={searchContainerRef}
+        className="absolute bottom-8 left-0 right-0 px-4 md:px-6 w-full z-40"
+      >
+        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-7xl">
+          <div className="p-2">
+            <div className="flex flex-col xl:flex-row gap-2">
               {/* Search Keyword Field */}
-              <div className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 transition-all duration-300 hover:bg-gray-50/50">
-                <div className="flex items-center gap-3">
-                  <Search className="h-5 w-5 text-teal-700" />
-                  <input
-                    type="text"
-                    placeholder="Search Keyword..."
-                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                  />
+              <div className="flex-1 group">
+                <div className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50">
+                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
+                    <Search className="h-5 w-5 text-teal-700" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-teal-700 mb-1">
+                      What are you looking for?
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Search businesses, services, products..."
+                      className="w-full outline-none text-gray-800 placeholder-gray-500 text-base bg-transparent font-medium"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Location Field */}
-              <div
-                className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative transition-all duration-300 hover:bg-gray-50/50"
-                ref={locationRef}
-              >
+              <div className="flex-1 group relative" ref={locationRef}>
                 <div
-                  className="flex items-center gap-3 cursor-pointer"
+                  className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50 cursor-pointer"
                   onClick={toggleLocationDropdown}
                 >
-                  <MapPin className="h-5 w-5 text-teal-700" />
-                  <input
-                    ref={locationInputRef}
-                    type="text"
-                    placeholder="Search Location..."
-                    className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
-                    value={location}
-                    onChange={(e) => {
-                      setLocation(e.target.value);
-                      if (e.target.value.trim() !== "") {
-                        setIsLocationDropdownOpen(true);
-                      } else {
-                        setIsLocationDropdownOpen(false);
-                      }
-                    }}
-                    onKeyPress={handleKeyPress}
-                    onFocus={() => {
-                      if (location.trim() !== "") {
-                        setIsLocationDropdownOpen(true);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
+                    <MapPin className="h-5 w-5 text-teal-700" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-teal-700 mb-1">
+                      Where?
+                    </label>
+                    <input
+                      ref={locationInputRef}
+                      type="text"
+                      placeholder="Enter city, state, or zip code..."
+                      className="w-full outline-none text-gray-800 placeholder-gray-500 text-base bg-transparent font-medium"
+                      value={location}
+                      onChange={(e) => {
+                        setLocation(e.target.value);
+                        if (e.target.value.trim() !== "") {
+                          setIsLocationDropdownOpen(true);
+                        } else {
+                          setIsLocationDropdownOpen(false);
+                        }
+                      }}
+                      onKeyPress={handleKeyPress}
+                      onFocus={() => {
+                        if (location.trim() !== "") {
+                          setIsLocationDropdownOpen(true);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <ChevronUp
-                    className={`h-5 w-5 text-teal-700 ml-1 shrink-0 transition-transform duration-300 ${
+                    className={`h-5 w-5 text-teal-700 transition-transform duration-300 ${
                       isLocationDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
                 </div>
 
                 {isLocationDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-300 origin-bottom">
+                  <div className="absolute left-0 right-0 bottom-full mb-3 bg-white shadow-2xl rounded-2xl z-50 max-h-64 overflow-y-auto border border-gray-100">
                     {isLoading ? (
-                      <div className="p-3 text-center text-gray-500">
-                        Loading...
+                      <div className="p-4 text-center text-gray-500 flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Searching locations...
                       </div>
                     ) : cities.length > 0 ? (
                       cities.map((city, index) => (
                         <div
                           key={index}
-                          className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
+                          className="p-4 hover:bg-teal-50 cursor-pointer text-gray-700 transition-all duration-200 flex items-center gap-3 border-b border-gray-50 last:border-b-0"
                           onClick={() => selectCity(city)}
                         >
-                          <MapPin className="h-4 w-4 text-teal-600 mr-2 opacity-70" />
-                          {city}
+                          <MapPin className="h-4 w-4 text-teal-600" />
+                          <span className="font-medium">{city}</span>
                         </div>
                       ))
-                    ) : (
-                      <div className="p-3 text-center text-gray-500">
-                        No locations found
+                    ) : location.trim() !== "" ? (
+                      <div className="p-4 text-center text-gray-500">
+                        No locations found for "{location}"
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>
 
               {/* Category Field */}
-              <div
-                className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative transition-all duration-300 hover:bg-gray-50/50"
-                ref={categoryRef}
-              >
+              <div className="flex-1 group relative" ref={categoryRef}>
                 <div
-                  className="flex items-center justify-between cursor-pointer"
+                  className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50 cursor-pointer"
                   onClick={toggleCategoryDropdown}
                 >
-                  <div className="flex items-center gap-3">
-                    <svg
-                      className="h-5 w-5 text-teal-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M4 6H20M4 12H20M4 18H20"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="text-gray-700 text-base whitespace-nowrap overflow-hidden text-ellipsis">
+                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
+                    <Grid3X3 className="h-5 w-5 text-teal-700" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-teal-700 mb-1">
+                      Category
+                    </label>
+                    <span className="text-gray-800 text-base font-medium block truncate">
                       {category}
                     </span>
                   </div>
                   <ChevronUp
-                    className={`h-5 w-5 text-teal-700 ml-1 shrink-0 transition-transform duration-300 ${
+                    className={`h-5 w-5 text-teal-700 transition-transform duration-300 ${
                       isCategoryDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
                 </div>
 
-                {/* Category Dropdown (shows upward) */}
                 {isCategoryDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100 transform transition-all duration-300 origin-bottom">
+                  <div className="absolute left-0 right-0 bottom-full mb-3 bg-white shadow-2xl rounded-2xl z-50 max-h-64 overflow-y-auto border border-gray-100">
                     {categories.map((cat, index) => (
                       <div
                         key={index}
-                        className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
+                        className="p-4 hover:bg-teal-50 cursor-pointer text-gray-700 transition-all duration-200 flex items-center gap-3 border-b border-gray-50 last:border-b-0"
                         onClick={() => selectCategory(cat)}
                       >
-                        <svg
-                          className="h-4 w-4 text-teal-600 mr-2 opacity-70"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M4 6H20M4 12H20M4 18H20"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        {cat}
+                        <Grid3X3 className="h-4 w-4 text-teal-600" />
+                        <span className="font-medium">{cat}</span>
+                        {cat === category && (
+                          <div className="ml-auto w-2 h-2 bg-teal-600 rounded-full"></div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div
-                className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-5 flex items-center justify-center cursor-pointer rounded-b-xl md:rounded-bl-none md:rounded-r-xl group"
-                onClick={handleSearch}
-                onMouseEnter={() => setIsSearchHovered(true)}
-                onMouseLeave={() => setIsSearchHovered(false)}
-              >
-                <button className="text-white font-medium flex items-center text-base whitespace-nowrap">
-                  <Search
-                    className={`h-5 w-5 mr-2 ${
-                      isSearchHovered ? "animate-pulse" : ""
-                    }`}
-                  />{" "}
-                  <span
-                    className={`transition-transform duration-300 cursor-pointer ${
-                      isSearchHovered ? "transform translate-x-1" : ""
-                    }`}
-                  >
-                    Search Now
-                  </span>
+              {/* Search Button */}
+              <div className="xl:w-auto w-full">
+                <button
+                  onClick={handleSearch}
+                  className="w-full xl:w-auto bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-8 py-6 rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 flex items-center justify-center gap-3 min-w-[200px]"
+                >
+                  <Search className="h-6 w-6" />
+                  Search Now
                 </button>
               </div>
             </div>

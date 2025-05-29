@@ -270,7 +270,7 @@ const ListingsPage = ({ defaultStatus = "" }) => {
       <div className="bg-white rounded-lg shadow">
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <form onSubmit={handleSearch} className="flex w-full max-w-lg">
+            {/* <form onSubmit={handleSearch} className="flex w-full max-w-lg">
               <input
                 type="text"
                 className="px-4 py-2 w-full rounded-l-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -284,7 +284,7 @@ const ListingsPage = ({ defaultStatus = "" }) => {
               >
                 <Search className="w-5 h-5" />
               </button>
-            </form>
+            </form> */}
 
             {!defaultStatus && (
               <select

@@ -25,11 +25,13 @@ export default function RandomListingsSection() {
         : null;
     setPin(userLocation);
 
+    const url = userLocation
+      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/random?pincode=${userLocation}`
+      : `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/random`;
+
     const fetchRandomListings = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/listings/random?pincode=${userLocation}`
-        );
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch listings");
         }

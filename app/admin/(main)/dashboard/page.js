@@ -19,6 +19,8 @@ import {
   BadgeIndianRupee,
   Gift,
   Book,
+  LucideIndianRupee,
+  BookA,
 } from "lucide-react";
 
 const MenuItem = ({
@@ -158,6 +160,18 @@ export const Sidebar = ({ adminData }) => {
       href: "/admin/banners",
       icon: Book,
       label: "Banners",
+      hasSubmenu: false,
+    },
+    {
+      href: "/admin/payment",
+      icon: LucideIndianRupee,
+      label: "Payments",
+      hasSubmenu: false,
+    },
+    {
+      href: "/admin/pages",
+      icon: BookA,
+      label: "Pages",
       hasSubmenu: false,
     },
   ];
