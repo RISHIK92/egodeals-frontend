@@ -26,6 +26,7 @@ const SubscriptionPlansPage = () => {
     name: "",
     description: "",
     durationDays: "",
+    promotionDays: "",
     price: "",
     tierType: "BASIC",
     isActive: true,
@@ -75,6 +76,7 @@ const SubscriptionPlansPage = () => {
           body: JSON.stringify({
             ...editPlan,
             durationDays: parseInt(editPlan.durationDays),
+            promotionDays: parseInt(editPlan.promotionDays),
             price: parseFloat(editPlan.price),
           }),
         }
@@ -135,6 +137,7 @@ const SubscriptionPlansPage = () => {
       name: plan.name,
       description: plan.description,
       durationDays: plan.durationDays.toString(),
+      promotionDays: plan.promotionDays.toString(),
       price: plan.price.toString(),
       tierType: plan.tierType,
       isActive: plan.isActive,
@@ -193,6 +196,12 @@ const SubscriptionPlansPage = () => {
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Duration
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Promotion
                 </th>
                 <th
                   scope="col"
@@ -297,6 +306,26 @@ const SubscriptionPlansPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {isEditing === plan.id ? (
+                        <input
+                          type="number"
+                          className="block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          value={editPlan.promotionDays}
+                          onChange={(e) =>
+                            setEditPlan({
+                              ...editPlan,
+                              promotionDays: e.target.value,
+                            })
+                          }
+                          min="1"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900">
+                          {plan.promotionDays} days
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {isEditing === plan.id ? (
                         <div className="relative rounded-md shadow-sm">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span className="text-gray-500 sm:text-sm">₹</span>
@@ -366,15 +395,19 @@ const SubscriptionPlansPage = () => {
                             disabled={
                               !editPlan.name ||
                               !editPlan.durationDays ||
+                              !editPlan.promotionDays ||
                               !editPlan.price ||
                               isNaN(editPlan.durationDays) ||
+                              isNaN(editPlan.promotionDays) ||
                               isNaN(editPlan.price)
                             }
                             className={`${
                               !editPlan.name ||
                               !editPlan.durationDays ||
+                              !editPlan.promotionDays ||
                               !editPlan.price ||
                               isNaN(editPlan.durationDays) ||
+                              isNaN(editPlan.promotionDays) ||
                               isNaN(editPlan.price)
                                 ? "text-blue-400 cursor-not-allowed"
                                 : "text-blue-600 hover:text-blue-900"

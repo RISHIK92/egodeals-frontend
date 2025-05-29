@@ -10,6 +10,8 @@ import Sidebar from "@/components/PageComponents/sidebar";
 import { Star } from "lucide-react";
 import TagsComponent from "@/components/PageComponents/tagComponent";
 import ListingPageClient from "@/components/PageComponents/shareClient";
+import ReviewSystem from "@/components/PageComponents/reviewSystem";
+import { cookies } from "next/headers";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -31,9 +33,41 @@ async function getListingDetails(slug) {
   }
 }
 
+async function getAuthStatus() {
+  try {
+    const cookieStore = cookies();
+    const authCookie = cookieStore.get("token"); // Replace with your actual cookie name
+
+    if (!authCookie) {
+      return { isAuthenticated: false, user: null };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/check-auth`, {
+      credentials: "include",
+      headers: {
+        Cookie: `${authCookie.name}=${authCookie.value}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { isAuthenticated: false, user: null };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error checking auth status:", error);
+    return { isAuthenticated: false, user: null };
+  }
+}
+
 export default async function ListingPage({ params }) {
   const { id } = params;
   const { listing, similarListings } = await getListingDetails(id);
+  const { isAuthenticated, user: authUser } = await getAuthStatus();
+  {
+    console.log(authUser);
+  }
 
   function extractYouTubeId(url) {
     // Handle various YouTube URL formats
@@ -246,6 +280,12 @@ export default async function ListingPage({ params }) {
                   <LocationMap locationUrl={listing.locationUrl} />
                 </div>
               )}
+              {console.log(authUser)}
+              <ReviewSystem
+                listingId={listing.id}
+                userId={authUser?.userId}
+                // isAuthenticated={isAuthenticated}
+              />
 
               {similarListings.length > 0 && (
                 <div className="mt-6">

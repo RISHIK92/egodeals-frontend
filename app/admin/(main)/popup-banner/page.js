@@ -194,16 +194,16 @@ export default function BannerManagementPage() {
   };
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-3 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Banner Management
+            PopUp Banner Management
           </h1>
           <p className="text-gray-600">
             {bannerLimitReached
-              ? "You can only have one banner at a time"
-              : "Add your home page banner"}
+              ? "You can only have one popup banner at a time"
+              : "Add your popup page banner"}
           </p>
         </div>
 

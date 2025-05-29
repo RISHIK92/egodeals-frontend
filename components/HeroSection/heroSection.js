@@ -6,8 +6,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Grid3X3,
-  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -23,9 +21,6 @@ export default function HeroSection() {
     "Restaurants",
     "Shopping",
     "Services",
-    "Healthcare",
-    "Entertainment",
-    "Education",
   ]);
   const [cities, setCities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,34 +29,31 @@ export default function HeroSection() {
   const locationRef = useRef(null);
   const searchContainerRef = useRef(null);
   const locationInputRef = useRef(null);
+  const [isSearchHovered, setIsSearchHovered] = useState(false);
 
   // Banner slider states
   const [banners, setBanners] = useState([
     {
       id: 1,
-      imageUrl: "/placeholder.svg?height=650&width=1200",
-      alt: "Discover Local Businesses",
-      title: "Find Your Perfect Match",
-      subtitle: "Discover amazing local businesses in your area",
+      imageUrl:
+        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner1.jpg",
+      alt: "Summer Collection",
     },
     {
       id: 2,
-      imageUrl: "/placeholder.svg?height=650&width=1200",
-      alt: "Connect with Services",
-      title: "Connect & Grow",
-      subtitle: "Build lasting relationships with trusted service providers",
+      imageUrl:
+        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner2.jpg",
+      alt: "New Arrivals",
     },
     {
       id: 3,
-      imageUrl: "/placeholder.svg?height=650&width=1200",
-      alt: "Explore Opportunities",
-      title: "Explore Endless Possibilities",
-      subtitle: "From dining to shopping, find everything you need nearby",
+      imageUrl:
+        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner3.jpg",
+      alt: "Special Offers",
     },
   ]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const bannerIntervalRef = useRef(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -87,7 +79,7 @@ export default function HeroSection() {
     const fetchBanners = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin-banners`
         );
         if (response.ok) {
           const data = await response.json();
@@ -110,7 +102,7 @@ export default function HeroSection() {
   const startAutoSlide = () => {
     bannerIntervalRef.current = setInterval(() => {
       goToNextBanner();
-    }, 6000);
+    }, 5000);
   };
 
   const stopAutoSlide = () => {
@@ -120,33 +112,19 @@ export default function HeroSection() {
   };
 
   const goToNextBanner = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentBannerIndex((prevIndex) =>
-        prevIndex === banners.length - 1 ? 0 : prevIndex + 1
-      );
-      setIsTransitioning(false);
-    }, 150);
+    setCurrentBannerIndex((prevIndex) =>
+      prevIndex === banners.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   const goToPrevBanner = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentBannerIndex((prevIndex) =>
-        prevIndex === 0 ? banners.length - 1 : prevIndex - 1
-      );
-      setIsTransitioning(false);
-    }, 150);
+    setCurrentBannerIndex((prevIndex) =>
+      prevIndex === 0 ? banners.length - 1 : prevIndex - 1
+    );
   };
 
   const goToBanner = (index) => {
-    if (index !== currentBannerIndex) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentBannerIndex(index);
-        setIsTransitioning(false);
-      }, 150);
-    }
+    setCurrentBannerIndex(index);
   };
 
   // Debounce function for location search
@@ -186,17 +164,8 @@ export default function HeroSection() {
       if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
         setTimeout(() => {
           setCities(
-            [
-              "New York",
-              "Los Angeles",
-              "Chicago",
-              "Houston",
-              "Phoenix",
-              "Philadelphia",
-              "San Antonio",
-              "San Diego",
-            ].filter((city) =>
-              city.toLowerCase().includes(searchQuery.toLowerCase())
+            ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"].filter(
+              (city) => city.toLowerCase().includes(searchQuery.toLowerCase())
             )
           );
           setIsLoading(false);
@@ -260,33 +229,22 @@ export default function HeroSection() {
     setIsCategoryDropdownOpen(false);
   };
 
-  const currentBanner = banners[currentBannerIndex];
-
   return (
-    <div className="relative w-full h-[700px] bg-gradient-to-br from-teal-50 to-teal-100 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_teal_1px,_transparent_0)] bg-[length:20px_20px]"></div>
-      </div>
-
-      {/* Banner Slider */}
+    <div className="relative w-full h-[650px] bg-gray-100 overflow-hidden">
+      {/* Custom Banner Slider */}
       <div className="relative w-full h-full">
-        {/* Banner Images with Overlay */}
+        {/* Banner Images */}
         <div className="relative w-full h-full overflow-hidden">
           {banners.map((banner, index) => (
             <div
               key={banner.id}
-              className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out ${
-                index === currentBannerIndex
-                  ? `opacity-100 scale-100 ${
-                      isTransitioning ? "blur-sm" : "blur-0"
-                    }`
-                  : "opacity-0 scale-105"
+              onClick={() => router.push(`${banner.ListingUrl}`)}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-500 cursor-pointer ${
+                index === currentBannerIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-900/60 via-teal-800/40 to-transparent z-10"></div>
               <img
-                src={banner.imageUrl || "/placeholder.svg"}
+                src={banner.Image}
                 alt={banner.alt}
                 className="w-full h-full object-contain"
                 loading="eager"
@@ -295,31 +253,9 @@ export default function HeroSection() {
           ))}
         </div>
 
-        {/* Hero Content */}
-        <div className="absolute inset-0 z-20 flex items-center">
-          <div className="container mx-auto px-6 lg:px-8">
-            <div className="max-w-2xl">
-              <div
-                className={`transition-all duration-700 ${
-                  isTransitioning
-                    ? "opacity-0 translate-y-4"
-                    : "opacity-100 translate-y-0"
-                }`}
-              >
-                <h1 className="text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                  {currentBanner.title}
-                </h1>
-                <p className="text-xl lg:text-2xl text-teal-100 mb-8 leading-relaxed">
-                  {currentBanner.subtitle}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Navigation Arrows */}
         <button
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/5 hover:bg-black/10 text-white p-2 rounded-full transition-all"
           onClick={() => {
             stopAutoSlide();
             goToPrevBanner();
@@ -327,10 +263,10 @@ export default function HeroSection() {
           }}
           aria-label="Previous banner"
         >
-          <ChevronLeft size={24} />
+          <ChevronLeft size={32} />
         </button>
         <button
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/5 hover:bg-black/10 text-white p-2 rounded-full transition-all"
           onClick={() => {
             stopAutoSlide();
             goToNextBanner();
@@ -338,18 +274,18 @@ export default function HeroSection() {
           }}
           aria-label="Next banner"
         >
-          <ChevronRight size={24} />
+          <ChevronRight size={32} />
         </button>
 
         {/* Pagination Indicators */}
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 flex space-x-3">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex space-x-2">
           {banners.map((_, index) => (
             <button
               key={index}
-              className={`h-2 rounded-full transition-all duration-300 ${
+              className={`w-3 h-3 rounded-full transition-all ${
                 index === currentBannerIndex
-                  ? "bg-white w-8 shadow-lg"
-                  : "bg-white/50 hover:bg-white/70 w-2"
+                  ? "bg-white w-6"
+                  : "bg-white/50 hover:bg-white/70"
               }`}
               onClick={() => {
                 stopAutoSlide();
@@ -362,159 +298,163 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Enhanced Search Bar */}
+      {/* Search Bar Section */}
       <div
         ref={searchContainerRef}
-        className="absolute bottom-8 left-0 right-0 px-4 md:px-6 w-full z-40"
+        className="absolute bottom-12 left-0 right-0 px-4 md:px-6 w-full z-40"
       >
-        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-7xl">
-          <div className="p-2">
-            <div className="flex flex-col xl:flex-row gap-2">
-              {/* Search Keyword Field */}
-              <div className="flex-1 group">
-                <div className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50">
-                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
-                    <Search className="h-5 w-5 text-teal-700" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-teal-700 mb-1">
-                      What are you looking for?
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Search businesses, services, products..."
-                      className="w-full outline-none text-gray-800 placeholder-gray-500 text-base bg-transparent font-medium"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                    />
-                  </div>
-                </div>
+        <div className="bg-white rounded-2xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-6xl">
+          <div className="flex flex-col lg:flex-row">
+            {/* Search Keyword Field */}
+            <div className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100">
+              <div className="flex items-center gap-3">
+                <Search className="h-5 w-5 text-teal-700" />
+                <input
+                  type="text"
+                  placeholder="Search Keyword..."
+                  className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+              </div>
+            </div>
+
+            {/* Location Field */}
+            <div
+              className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative"
+              ref={locationRef}
+            >
+              <div
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={toggleLocationDropdown}
+              >
+                <MapPin className="h-5 w-5 text-teal-700" />
+                <input
+                  ref={locationInputRef}
+                  type="text"
+                  placeholder="Search Location..."
+                  className="w-full outline-none text-gray-700 placeholder-gray-400 text-base bg-transparent"
+                  value={location}
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    if (e.target.value.trim() !== "") {
+                      setIsLocationDropdownOpen(true);
+                    } else {
+                      setIsLocationDropdownOpen(false);
+                    }
+                  }}
+                  onKeyPress={handleKeyPress}
+                  onFocus={() => {
+                    if (location.trim() !== "") {
+                      setIsLocationDropdownOpen(true);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <ChevronUp
+                  className={`h-5 w-5 text-teal-700 ml-1 shrink-0 transition-transform duration-300 ${
+                    isLocationDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </div>
 
-              {/* Location Field */}
-              <div className="flex-1 group relative" ref={locationRef}>
-                <div
-                  className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50 cursor-pointer"
-                  onClick={toggleLocationDropdown}
-                >
-                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
-                    <MapPin className="h-5 w-5 text-teal-700" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-teal-700 mb-1">
-                      Where?
-                    </label>
-                    <input
-                      ref={locationInputRef}
-                      type="text"
-                      placeholder="Enter city, state, or zip code..."
-                      className="w-full outline-none text-gray-800 placeholder-gray-500 text-base bg-transparent font-medium"
-                      value={location}
-                      onChange={(e) => {
-                        setLocation(e.target.value);
-                        if (e.target.value.trim() !== "") {
-                          setIsLocationDropdownOpen(true);
-                        } else {
-                          setIsLocationDropdownOpen(false);
-                        }
-                      }}
-                      onKeyPress={handleKeyPress}
-                      onFocus={() => {
-                        if (location.trim() !== "") {
-                          setIsLocationDropdownOpen(true);
-                        }
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <ChevronUp
-                    className={`h-5 w-5 text-teal-700 transition-transform duration-300 ${
-                      isLocationDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </div>
-
-                {isLocationDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-3 bg-white shadow-2xl rounded-2xl z-50 max-h-64 overflow-y-auto border border-gray-100">
-                    {isLoading ? (
-                      <div className="p-4 text-center text-gray-500 flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Searching locations...
-                      </div>
-                    ) : cities.length > 0 ? (
-                      cities.map((city, index) => (
-                        <div
-                          key={index}
-                          className="p-4 hover:bg-teal-50 cursor-pointer text-gray-700 transition-all duration-200 flex items-center gap-3 border-b border-gray-50 last:border-b-0"
-                          onClick={() => selectCity(city)}
-                        >
-                          <MapPin className="h-4 w-4 text-teal-600" />
-                          <span className="font-medium">{city}</span>
-                        </div>
-                      ))
-                    ) : location.trim() !== "" ? (
-                      <div className="p-4 text-center text-gray-500">
-                        No locations found for "{location}"
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              {/* Category Field */}
-              <div className="flex-1 group relative" ref={categoryRef}>
-                <div
-                  className="flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 group-hover:bg-teal-50/50 cursor-pointer"
-                  onClick={toggleCategoryDropdown}
-                >
-                  <div className="p-2 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors">
-                    <Grid3X3 className="h-5 w-5 text-teal-700" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-teal-700 mb-1">
-                      Category
-                    </label>
-                    <span className="text-gray-800 text-base font-medium block truncate">
-                      {category}
-                    </span>
-                  </div>
-                  <ChevronUp
-                    className={`h-5 w-5 text-teal-700 transition-transform duration-300 ${
-                      isCategoryDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </div>
-
-                {isCategoryDropdownOpen && (
-                  <div className="absolute left-0 right-0 bottom-full mb-3 bg-white shadow-2xl rounded-2xl z-50 max-h-64 overflow-y-auto border border-gray-100">
-                    {categories.map((cat, index) => (
+              {isLocationDropdownOpen && (
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100">
+                  {isLoading ? (
+                    <div className="p-3 text-center text-gray-500">
+                      Loading...
+                    </div>
+                  ) : cities.length > 0 ? (
+                    cities.map((city, index) => (
                       <div
                         key={index}
-                        className="p-4 hover:bg-teal-50 cursor-pointer text-gray-700 transition-all duration-200 flex items-center gap-3 border-b border-gray-50 last:border-b-0"
-                        onClick={() => selectCategory(cat)}
+                        className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
+                        onClick={() => selectCity(city)}
                       >
-                        <Grid3X3 className="h-4 w-4 text-teal-600" />
-                        <span className="font-medium">{cat}</span>
-                        {cat === category && (
-                          <div className="ml-auto w-2 h-2 bg-teal-600 rounded-full"></div>
-                        )}
+                        <MapPin className="h-4 w-4 text-teal-600 mr-2 opacity-70" />
+                        {city}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-gray-500">
+                      No locations found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Category Field */}
+            <div
+              className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100 relative"
+              ref={categoryRef}
+            >
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={toggleCategoryDropdown}
+              >
+                <div className="flex items-center gap-3">
+                  <svg
+                    className="h-5 w-5 text-teal-700"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4 6H20M4 12H20M4 18H20"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="text-gray-700 text-base whitespace-nowrap overflow-hidden text-ellipsis">
+                    {category}
+                  </span>
+                </div>
+                <ChevronUp
+                  className={`h-5 w-5 text-teal-700 ml-1 shrink-0 transition-transform duration-300 ${
+                    isCategoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </div>
 
-              {/* Search Button */}
-              <div className="xl:w-auto w-full">
-                <button
-                  onClick={handleSearch}
-                  className="w-full xl:w-auto bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-8 py-6 rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 flex items-center justify-center gap-3 min-w-[200px]"
-                >
-                  <Search className="h-6 w-6" />
-                  Search Now
-                </button>
-              </div>
+              {isCategoryDropdownOpen && (
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-white shadow-xl rounded-xl z-50 max-h-60 overflow-y-auto border border-gray-100">
+                  {categories.map((cat, index) => (
+                    <div
+                      key={index}
+                      className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
+                      onClick={() => selectCategory(cat)}
+                    >
+                      <svg
+                        className="h-4 w-4 text-teal-600 mr-2 opacity-70"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M4 6H20M4 12H20M4 18H20"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      {cat}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div
+              className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-5 flex items-center justify-center cursor-pointer rounded-b-xl md:rounded-bl-none md:rounded-r-xl"
+              onClick={handleSearch}
+            >
+              <button className="text-white font-medium flex items-center text-base whitespace-nowrap">
+                <Search className="h-5 w-5 mr-2" />
+                <span>Search Now</span>
+              </button>
             </div>
           </div>
         </div>

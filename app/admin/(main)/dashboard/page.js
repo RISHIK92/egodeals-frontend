@@ -157,10 +157,16 @@ export const Sidebar = ({ adminData }) => {
       hasSubmenu: false,
     },
     {
-      href: "/admin/banners",
+      href: "/admin/popup-banner",
       icon: Book,
       label: "Banners",
-      hasSubmenu: false,
+      hasSubmenu: true,
+      submenu: "Banners",
+      submenuItems: [
+        { href: "/admin/popup-banner", label: "Popup Banner" },
+        { href: "/admin/hero-banners", label: "Hero Banners" },
+      ],
+      permission: null,
     },
     {
       href: "/admin/payment",

@@ -13,7 +13,7 @@ export default function Home() {
     <>
       {/* <Navbar /> */}
       <HeroSection />
-      <AdminFullWidthBanner />
+      <FullWidthBanner />
       {/* <FullWidthBanner
       // image={"https://egodeals.com/data/banners/1737541263.png"}
       /> */}
