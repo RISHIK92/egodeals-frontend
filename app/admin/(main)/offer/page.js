@@ -49,7 +49,7 @@ const OfferZonePage = () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/offer-zone`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin/offer-zone`,
           {
             credentials: "include",
           }
