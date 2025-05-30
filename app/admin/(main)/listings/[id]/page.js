@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
+import { Select, SelectItem } from "@heroui/react";
 
 const ListingDetailPage = () => {
   const { id } = useParams();
@@ -135,6 +136,44 @@ const ListingDetailPage = () => {
     } catch (error) {
       console.error("Feature error:", error);
       toast.error("Failed to feature listing");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTierChange = async (newTier) => {
+    if (isProcessing) return;
+    if (newTier === listing.listingTier) return;
+
+    if (
+      !confirm(
+        `Are you sure you want to change this listing to ${newTier} tier?`
+      )
+    )
+      return;
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch(
+        `${backendUrl}/admin/listings/${id}/change-tier`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ newTier }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to change listing tier: ${errorText}`);
+      }
+
+      setListing((prev) => (prev ? { ...prev, listingTier: newTier } : null));
+      toast.success(`Listing tier changed to ${newTier} successfully`);
+    } catch (error) {
+      console.error("Tier change error:", error);
+      toast.error("Failed to change listing tier");
     } finally {
       setIsProcessing(false);
     }
@@ -479,6 +518,32 @@ const ListingDetailPage = () => {
             {isProcessing ? "Processing..." : "Delete"}
           </button>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-black mb-1">
+          Listing Tier
+        </label>
+        <Select
+          selectedKeys={[listing.listingTier]}
+          onChange={(e) => handleTierChange(e.target.value)}
+          disabled={isProcessing}
+          className="max-w-xs bg-white"
+        >
+          <SelectItem key="FREE" value="FREE" className="bg-white">
+            Free
+          </SelectItem>
+          <SelectItem key="PREMIUM" value="PREMIUM" className="bg-white">
+            Premium
+          </SelectItem>
+          <SelectItem
+            key="PREMIUM_PLUS"
+            value="PREMIUM_PLUS"
+            className="bg-white"
+          >
+            Premium Plus
+          </SelectItem>
+        </Select>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">

@@ -61,8 +61,8 @@ export default function AdminLogin() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700 items-center justify-center">
         <div className="bg-gray-200">
           <img
-            className="h-40"
-            src="https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png"
+            className="h-24"
+            src="https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg"
           />
         </div>
         <div className="max-w-md text-white p-12">

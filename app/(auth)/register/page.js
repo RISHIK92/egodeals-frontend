@@ -73,13 +73,13 @@ export default function Register() {
       <div className="flex-1 flex flex-col p-6 md:p-10 lg:p-16">
         <div className="flex justify-center lg:justify-start">
           <img
-            src="https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png"
+            src="https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg"
             alt="egodeals logo"
-            className="h-48 absolute -top-12 lg:h-48 lg:absolute lg:left-28 lg:top-1"
+            className="h-20 absolute top-2 lg:h-20 lg:absolute lg:left-28 lg:top-10"
           />
         </div>
 
-        <div className="flex mx-0 md:mx-0 sm:mx-0 lg:mx-16 flex-col max-w-md mt-16 lg:mt-24">
+        <div className="flex mx-0 md:mx-0 sm:mx-0 lg:mx-16 flex-col max-w-md mt-20 lg:mt-24">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Register</h1>
           <p className="text-gray-600 mb-8">
             Already have an account?{" "}

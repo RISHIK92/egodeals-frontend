@@ -88,7 +88,7 @@ export default function PaymentGateway({
         name: "Ego Deals",
         description: getPaymentDescription(),
         image:
-          "https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png",
+          "https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg",
         order_id: order.id,
         handler: async function (response) {
           try {
@@ -120,11 +120,6 @@ export default function PaymentGateway({
             console.error("Verification error:", err);
             setError(err.message || "Payment verification failed");
           }
-        },
-        prefill: {
-          name: "Customer Name",
-          email: "customer@example.com",
-          contact: "9999999999",
         },
         notes: {
           listingId,

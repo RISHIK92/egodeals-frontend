@@ -29,36 +29,38 @@ export default function HeroSection() {
   const locationRef = useRef(null);
   const searchContainerRef = useRef(null);
   const locationInputRef = useRef(null);
-  const [isSearchHovered, setIsSearchHovered] = useState(false);
 
   // Banner slider states
   const [banners, setBanners] = useState([
     {
       id: 1,
-      imageUrl:
-        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner1.jpg",
+      Image: "/placeholder.svg?height=650&width=1200",
       alt: "Summer Collection",
+      ListingUrl: "/listings/summer",
     },
     {
       id: 2,
-      imageUrl:
-        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner2.jpg",
+      Image: "/placeholder.svg?height=650&width=1200",
       alt: "New Arrivals",
+      ListingUrl: "/listings/new-arrivals",
     },
     {
       id: 3,
-      imageUrl:
-        "https://res.cloudinary.com/df622sxkk/image/upload/v1710000000/banner3.jpg",
+      Image: "/placeholder.svg?height=650&width=1200",
       alt: "Special Offers",
+      ListingUrl: "/listings/offers",
     },
   ]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [isAutoSliding, setIsAutoSliding] = useState(true);
   const bannerIntervalRef = useRef(null);
 
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`
         );
@@ -78,12 +80,16 @@ export default function HeroSection() {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
+        if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin-banners`
         );
         if (response.ok) {
           const data = await response.json();
-          if (data.length > 0) setBanners(data);
+          if (data.length > 0) {
+            setBanners(data);
+          }
         }
       } catch (error) {
         console.error("Error fetching banners:", error);
@@ -95,19 +101,25 @@ export default function HeroSection() {
 
   // Auto-slide banners
   useEffect(() => {
-    startAutoSlide();
+    if (isAutoSliding && banners.length > 1) {
+      startAutoSlide();
+    }
     return () => stopAutoSlide();
-  }, []);
+  }, [isAutoSliding, banners.length]);
 
   const startAutoSlide = () => {
+    stopAutoSlide(); // Clear any existing interval
     bannerIntervalRef.current = setInterval(() => {
-      goToNextBanner();
+      setCurrentBannerIndex((prevIndex) =>
+        prevIndex === banners.length - 1 ? 0 : prevIndex + 1
+      );
     }, 5000);
   };
 
   const stopAutoSlide = () => {
     if (bannerIntervalRef.current) {
       clearInterval(bannerIntervalRef.current);
+      bannerIntervalRef.current = null;
     }
   };
 
@@ -125,6 +137,24 @@ export default function HeroSection() {
 
   const goToBanner = (index) => {
     setCurrentBannerIndex(index);
+  };
+
+  const handleBannerNavigation = (direction) => {
+    setIsAutoSliding(false);
+    if (direction === "next") {
+      goToNextBanner();
+    } else {
+      goToPrevBanner();
+    }
+    // Resume auto-sliding after 10 seconds
+    setTimeout(() => setIsAutoSliding(true), 10000);
+  };
+
+  const handleBannerClick = (index) => {
+    setIsAutoSliding(false);
+    goToBanner(index);
+    // Resume auto-sliding after 10 seconds
+    setTimeout(() => setIsAutoSliding(true), 10000);
   };
 
   // Debounce function for location search
@@ -161,7 +191,9 @@ export default function HeroSection() {
   const fetchCities = async (searchQuery) => {
     try {
       setIsLoading(true);
+
       if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
+        // Fallback with mock data
         setTimeout(() => {
           setCities(
             ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"].filter(
@@ -182,10 +214,17 @@ export default function HeroSection() {
       if (response.ok) {
         const data = await response.json();
         setCities(data);
+      } else {
+        throw new Error("Failed to fetch cities");
       }
     } catch (error) {
       console.error("Error fetching cities:", error);
-      setCities(["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"]);
+      // Fallback to mock data
+      setCities(
+        ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"].filter(
+          (city) => city.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -193,8 +232,8 @@ export default function HeroSection() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchTerm) params.set("search", searchTerm);
-    if (location) params.set("location", location);
+    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    if (location.trim()) params.set("location", location.trim());
     if (category && category !== "All Categories")
       params.set("category", category);
 
@@ -229,6 +268,12 @@ export default function HeroSection() {
     setIsCategoryDropdownOpen(false);
   };
 
+  const handleBannerImageClick = (banner) => {
+    if (banner.ListingUrl) {
+      router.push(banner.ListingUrl);
+    }
+  };
+
   return (
     <div className="relative w-full h-[650px] bg-gray-100 overflow-hidden">
       {/* Custom Banner Slider */}
@@ -238,77 +283,76 @@ export default function HeroSection() {
           {banners.map((banner, index) => (
             <div
               key={banner.id}
-              onClick={() => router.push(`${banner.ListingUrl}`)}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-500 cursor-pointer ${
+              className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
                 index === currentBannerIndex ? "opacity-100" : "opacity-0"
-              }`}
+              } ${banner.ListingUrl ? "cursor-pointer" : ""}`}
+              onClick={() => handleBannerImageClick(banner)}
             >
               <img
-                src={banner.Image}
+                src={banner.Image || "/placeholder.svg"}
                 alt={banner.alt}
                 className="w-full h-full object-contain"
-                loading="eager"
+                loading={index === 0 ? "eager" : "lazy"}
+                onError={(e) => {
+                  e.target.src = "/placeholder.svg?height=650&width=1200";
+                }}
               />
+              {/* Overlay for better text readability */}
+              <div className="absolute inset-0" />
             </div>
           ))}
         </div>
 
-        {/* Navigation Arrows */}
-        <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/5 hover:bg-black/10 text-white p-2 rounded-full transition-all"
-          onClick={() => {
-            stopAutoSlide();
-            goToPrevBanner();
-            startAutoSlide();
-          }}
-          aria-label="Previous banner"
-        >
-          <ChevronLeft size={32} />
-        </button>
-        <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/5 hover:bg-black/10 text-white p-2 rounded-full transition-all"
-          onClick={() => {
-            stopAutoSlide();
-            goToNextBanner();
-            startAutoSlide();
-          }}
-          aria-label="Next banner"
-        >
-          <ChevronRight size={32} />
-        </button>
-
-        {/* Pagination Indicators */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex space-x-2">
-          {banners.map((_, index) => (
+        {/* Navigation Arrows - Only show if more than 1 banner */}
+        {banners.length > 1 && (
+          <>
             <button
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentBannerIndex
-                  ? "bg-white w-6"
-                  : "bg-white/50 hover:bg-white/70"
-              }`}
-              onClick={() => {
-                stopAutoSlide();
-                goToBanner(index);
-                startAutoSlide();
-              }}
-              aria-label={`Go to banner ${index + 1}`}
-            />
-          ))}
-        </div>
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-all duration-200 backdrop-blur-sm"
+              onClick={() => handleBannerNavigation("prev")}
+              aria-label="Previous banner"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-all duration-200 backdrop-blur-sm"
+              onClick={() => handleBannerNavigation("next")}
+              aria-label="Next banner"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </>
+        )}
+
+        {/* Pagination Indicators - Only show if more than 1 banner */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex space-x-2">
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                className={`h-3 rounded-full transition-all duration-200 ${
+                  index === currentBannerIndex
+                    ? "bg-white w-8"
+                    : "bg-white/50 hover:bg-white/70 w-3"
+                }`}
+                onClick={() => handleBannerClick(index)}
+                aria-label={`Go to banner ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Search Bar Section */}
       <div
         ref={searchContainerRef}
-        className="absolute bottom-12 left-0 right-0 px-4 md:px-6 w-full z-40"
+        className="absolute bottom-6 left-0 right-0 px-4 md:px-6 w-full z-10"
       >
         <div className="bg-white rounded-2xl shadow-2xl overflow-visible mx-auto border border-white/50 max-w-6xl">
           <div className="flex flex-col lg:flex-row">
             {/* Search Keyword Field */}
             <div className="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-gray-100">
               <div className="flex items-center gap-3">
-                <Search className="h-5 w-5 text-teal-700" />
+                <Search className="h-5 w-5 text-teal-700 flex-shrink-0" />
                 <input
                   type="text"
                   placeholder="Search Keyword..."
@@ -329,7 +373,7 @@ export default function HeroSection() {
                 className="flex items-center gap-3 cursor-pointer"
                 onClick={toggleLocationDropdown}
               >
-                <MapPin className="h-5 w-5 text-teal-700" />
+                <MapPin className="h-5 w-5 text-teal-700 flex-shrink-0" />
                 <input
                   ref={locationInputRef}
                   type="text"
@@ -372,15 +416,15 @@ export default function HeroSection() {
                         className="p-3 hover:bg-teal-50 cursor-pointer text-gray-700 transition-colors duration-200 flex items-center"
                         onClick={() => selectCity(city)}
                       >
-                        <MapPin className="h-4 w-4 text-teal-600 mr-2 opacity-70" />
+                        <MapPin className="h-4 w-4 text-teal-600 mr-2 opacity-70 flex-shrink-0" />
                         {city}
                       </div>
                     ))
-                  ) : (
+                  ) : location.trim() !== "" ? (
                     <div className="p-3 text-center text-gray-500">
                       No locations found
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -394,9 +438,9 @@ export default function HeroSection() {
                 className="flex items-center justify-between cursor-pointer"
                 onClick={toggleCategoryDropdown}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <svg
-                    className="h-5 w-5 text-teal-700"
+                    className="h-5 w-5 text-teal-700 flex-shrink-0"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -408,7 +452,7 @@ export default function HeroSection() {
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="text-gray-700 text-base whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="text-gray-700 text-base truncate">
                     {category}
                   </span>
                 </div>
@@ -428,7 +472,7 @@ export default function HeroSection() {
                       onClick={() => selectCategory(cat)}
                     >
                       <svg
-                        className="h-4 w-4 text-teal-600 mr-2 opacity-70"
+                        className="h-4 w-4 text-teal-600 mr-2 opacity-70 flex-shrink-0"
                         viewBox="0 0 24 24"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
@@ -447,8 +491,9 @@ export default function HeroSection() {
               )}
             </div>
 
+            {/* Search Button */}
             <div
-              className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-5 flex items-center justify-center cursor-pointer rounded-b-xl md:rounded-bl-none md:rounded-r-xl"
+              className="bg-teal-700 hover:bg-teal-800 transition-all duration-300 p-5 flex items-center justify-center cursor-pointer rounded-b-xl lg:rounded-bl-none lg:rounded-r-xl"
               onClick={handleSearch}
             >
               <button className="text-white font-medium flex items-center text-base whitespace-nowrap">

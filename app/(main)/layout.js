@@ -35,22 +35,18 @@ function Footer() {
       <div className="h-2 bg-gradient-to-r from-[#EC5B46] to-[#FEAA9E]"></div>
 
       <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-10">
-          {/* Logo and contact section */}
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-teal-700 flex items-center justify-center">
-                <span className="text-white text-xl font-bold">e</span>
-              </div>
-              <div className="ml-2">
-                <span className="text-xl font-semibold">
-                  <span className="text-teal-700">ego</span>
-                  <span className="text-red-500">deals</span>
-                </span>
-                <p className="text-xs text-gray-500">
-                  enhancing local business.
-                </p>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-2">
+          <div className="flex flex-col space-y-1">
+            {" "}
+            <div
+              className="h-16 w-auto cursor-pointer"
+              onClick={() => router.push("/")}
+            >
+              <img
+                src="https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg"
+                alt="egodeals logo"
+                className="h-16 object-contain"
+              />
             </div>
             <div className="mt-4">
               <ul className="space-y-2 md:ml-8">

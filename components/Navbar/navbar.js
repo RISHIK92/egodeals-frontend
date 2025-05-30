@@ -161,13 +161,13 @@ export default function Navbar() {
       <div className="flex justify-between items-center h-20 px-6 lg:px-12 bg-gradient-to-r from-white to-teal-50 backdrop-blur-sm border-b border-teal-100/30 fixed top-0 left-0 right-0 z-50 shadow-sm">
         <div className="flex items-center">
           <div
-            className="h-44 w-auto cursor-pointer"
+            className="h-16 w-auto cursor-pointer"
             onClick={() => router.push("/")}
           >
             <img
-              src="https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png"
+              src="https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg"
               alt="egodeals logo"
-              className="h-full object-contain"
+              className="h-16 object-contain"
             />
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function Navbar() {
           {navItems.map((item) => (
             <div
               key={item}
-              className="flex items-center cursor-pointer relative group"
+              className="flex items-center cursor-pointer relative group z-50"
               onClick={() => handleClick(item)}
             >
               <span

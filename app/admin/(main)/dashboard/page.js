@@ -122,7 +122,12 @@ export const Sidebar = ({ adminData }) => {
       href: "/admin/categories",
       icon: Tag,
       label: "Categories",
-      hasSubmenu: false,
+      hasSubmenu: true,
+      submenu: "categories",
+      submenuItems: [
+        { href: "/admin/categories", label: "Categories" },
+        { href: "/admin/home-categories", label: "Home Categories" },
+      ],
     },
     {
       href: "/admin/pricing",
@@ -189,10 +194,10 @@ export const Sidebar = ({ adminData }) => {
 
   return (
     <div className="flex flex-col w-64 h-screen bg-slate-900 border-r border-slate-700">
-      <div className="flex items-center justify-center h-16 px-4 border-b border-slate-700">
+      <div className="flex items-center justify-center h-12 px-4 border-b border-slate-700">
         <img
-          className="h-40"
-          src="https://res.cloudinary.com/df622sxkk/image/upload/v1746742290/0c8eb74fb6f15192bef2770ba22d1524669d558f_xzk58h.png"
+          className="h-12"
+          src="https://res.cloudinary.com/df622sxkk/image/upload/v1748618480/thumb-816x460-logo-657d3fb8b6ed1_aqovvn.jpg"
         />
       </div>
 

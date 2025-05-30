@@ -989,12 +989,18 @@ function ListingCard({
           <span>
             Posted: {new Date(listing.createdAt).toLocaleDateString()}
           </span>
-          <button
-            className="text-teal-600 hover:text-teal-700"
-            onClick={() => router.push(`/listings/${listing.id}`)}
-          >
-            View Details
-          </button>
+          {!isPending && !isArchived && (
+            <button
+              className="text-teal-600 hover:text-teal-700"
+              onClick={() =>
+                router.push(
+                  `/page/${listing.slug.toLowerCase().replace(/\s+/g, "-")}`
+                )
+              }
+            >
+              View Details
+            </button>
+          )}
         </div>
 
         {isPending && (

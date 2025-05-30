@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@heroui/react": "^2.7.8",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "dompurify": "^3.2.6",
@@ -27,8 +31,10 @@
     "react-leaflet": "^5.0.0",
     "react-share": "^5.2.2",
     "react-toastify": "^11.0.5",
+    "react-window": "^1.8.11",
     "swiper": "^11.2.8",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "use-debounce": "^10.0.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

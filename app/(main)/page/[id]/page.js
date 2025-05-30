@@ -172,7 +172,7 @@ export default async function ListingPage({ params }) {
                         <Star
                           key={i}
                           className={`w-4 h-4 ${
-                            i < 4
+                            i < listing.rating
                               ? "text-yellow-400 fill-yellow-400"
                               : "text-gray-300"
                           }`}
