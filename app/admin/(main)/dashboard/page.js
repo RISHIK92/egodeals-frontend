@@ -21,6 +21,7 @@ import {
   Book,
   LucideIndianRupee,
   BookA,
+  MapPin,
 } from "lucide-react";
 
 const MenuItem = ({
@@ -128,6 +129,12 @@ export const Sidebar = ({ adminData }) => {
         { href: "/admin/categories", label: "Categories" },
         { href: "/admin/home-categories", label: "Home Categories" },
       ],
+    },
+    {
+      href: "/admin/location",
+      icon: MapPin,
+      label: "Location",
+      hasSubmenu: false,
     },
     {
       href: "/admin/pricing",

@@ -285,19 +285,6 @@ const ListingsPage = ({ defaultStatus = "" }) => {
                 <Search className="w-5 h-5" />
               </button>
             </form> */}
-
-            {!defaultStatus && (
-              <select
-                className="block w-full sm:w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-              >
-                <option value="">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            )}
           </div>
         </div>
 
