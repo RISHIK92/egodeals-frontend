@@ -18,7 +18,8 @@ export default function BannerManagementPage() {
     active: true,
   });
   const [editingId, setEditingId] = useState(null);
-  const [bannerLimitReached, setBannerLimitReached] = useState(false);
+  const [activeBannerLimitReached, setActiveBannerLimitReached] =
+    useState(false);
 
   // Fetch all banners
   useEffect(() => {
@@ -29,7 +30,10 @@ export default function BannerManagementPage() {
           { withCredentials: true }
         );
         setBanners(response.data);
-        setBannerLimitReached(response.data.length >= 1);
+
+        // Check if there's already an active banner
+        const hasActiveBanner = response.data.some((banner) => banner.active);
+        setActiveBannerLimitReached(hasActiveBanner);
       } catch (error) {
         console.error("Failed to fetch banners:", error);
         toast.error("Failed to load banners");
@@ -54,9 +58,10 @@ export default function BannerManagementPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (bannerLimitReached && !editingId) {
+    // Check if trying to activate a new banner when there's already an active one
+    if (formData.active && activeBannerLimitReached && !editingId) {
       toast.error(
-        "Only one banner is allowed. Please delete the current banner first."
+        "Only one banner can be active at a time. Please deactivate the current active banner first."
       );
       return;
     }
@@ -113,7 +118,6 @@ export default function BannerManagementPage() {
           { withCredentials: true }
         );
         toast.success("Banner created successfully");
-        setBannerLimitReached(true);
       }
 
       // Refresh banner list
@@ -122,6 +126,10 @@ export default function BannerManagementPage() {
         { withCredentials: true }
       );
       setBanners(response.data);
+
+      // Update active banner limit status
+      const hasActiveBanner = response.data.some((banner) => banner.active);
+      setActiveBannerLimitReached(hasActiveBanner);
 
       // Reset form
       setFormData({ ListingUrl: "", active: true });
@@ -156,8 +164,13 @@ export default function BannerManagementPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/${id}`,
         { withCredentials: true }
       );
-      setBanners(banners.filter((banner) => banner.id !== id));
-      setBannerLimitReached(false);
+      const updatedBanners = banners.filter((banner) => banner.id !== id);
+      setBanners(updatedBanners);
+
+      // Update active banner limit status
+      const hasActiveBanner = updatedBanners.some((banner) => banner.active);
+      setActiveBannerLimitReached(hasActiveBanner);
+
       toast.success("Banner deleted successfully");
 
       // Reset form if editing the deleted banner
@@ -176,16 +189,33 @@ export default function BannerManagementPage() {
   // Toggle banner status
   const toggleActive = async (id, currentStatus) => {
     try {
+      // If activating, check if there's already an active banner
+      if (!currentStatus && activeBannerLimitReached) {
+        toast.error(
+          "Only one banner can be active at a time. Please deactivate the current active banner first."
+        );
+        return;
+      }
+
       await axios.put(
         `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/${id}`,
         { active: !currentStatus },
         { withCredentials: true }
       );
-      setBanners(
-        banners.map((banner) =>
-          banner.id === id ? { ...banner, active: !currentStatus } : banner
-        )
-      );
+
+      const updatedBanners = banners.map((banner) => {
+        if (banner.id === id) {
+          return { ...banner, active: !currentStatus };
+        }
+        // If activating this banner, deactivate all others
+        if (!currentStatus && banner.active) {
+          return { ...banner, active: false };
+        }
+        return banner;
+      });
+
+      setBanners(updatedBanners);
+      setActiveBannerLimitReached(!currentStatus);
       toast.success(`Banner ${!currentStatus ? "activated" : "deactivated"}`);
     } catch (error) {
       console.error("Failed to update banner status:", error);
@@ -201,8 +231,8 @@ export default function BannerManagementPage() {
             PopUp Banner Management
           </h1>
           <p className="text-gray-600">
-            {bannerLimitReached
-              ? "You can only have one popup banner at a time"
+            {activeBannerLimitReached
+              ? "Only one banner can be active at a time"
               : "Add your popup page banner"}
           </p>
         </div>
@@ -210,14 +240,10 @@ export default function BannerManagementPage() {
         {/* Banner Form */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-12">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            {editingId
-              ? "Edit Banner"
-              : bannerLimitReached
-              ? "Edit Current Banner"
-              : "Add New Banner"}
+            {editingId ? "Edit Banner" : "Add New Banner"}
           </h2>
 
-          {bannerLimitReached && !editingId ? (
+          {activeBannerLimitReached && formData.active && !editingId ? (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -236,133 +262,141 @@ export default function BannerManagementPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-yellow-700">
-                    Only one banner is allowed. Please delete the current banner
-                    before uploading a new one.
+                    Only one banner can be active at a time. You can either:
+                    <li>Deactivate the current active banner</li>
+                    <li>Create this banner as inactive</li>
+                    <li>Edit the current active banner</li>
                   </p>
                 </div>
               </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Banner Image
-                </label>
-                <div className="mt-1 flex items-center">
-                  <label
-                    htmlFor="banner-upload"
-                    className="cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 w-full hover:border-gray-400 transition-colors"
-                  >
-                    {previewUrl ? (
-                      <div className="relative group">
-                        <img
-                          src={previewUrl}
-                          alt="Banner preview"
-                          className="max-h-48 rounded-md object-contain"
-                        />
-                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                          <span className="text-black opacity-0 group-hover:opacity-100">
-                            Change Image
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center">
-                        <ImageIcon className="w-12 h-12 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-600">
-                          Click to upload an image
-                        </span>
-                        <span className="text-xs text-gray-500 mt-1">
-                          Recommended size: 1200x400px
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Banner Image
+              </label>
+              <div className="mt-1 flex items-center">
+                <label
+                  htmlFor="banner-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 w-full hover:border-gray-400 transition-colors"
+                >
+                  {previewUrl ? (
+                    <div className="relative group">
+                      <img
+                        src={previewUrl}
+                        alt="Banner preview"
+                        className="max-h-48 rounded-md object-contain"
+                      />
+                      <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-black opacity-0 group-hover:opacity-100">
+                          Change Image
                         </span>
                       </div>
-                    )}
-                    <input
-                      id="banner-upload"
-                      name="banner-upload"
-                      type="file"
-                      className="sr-only"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="listingUrl"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Link URL (optional)
-                </label>
-                <input
-                  type="url"
-                  id="listingUrl"
-                  name="listingUrl"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="https://example.com/promotion"
-                  value={formData.ListingUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, ListingUrl: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="active"
-                  name="active"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={formData.active}
-                  onChange={(e) =>
-                    setFormData({ ...formData, active: e.target.checked })
-                  }
-                />
-                <label
-                  htmlFor="active"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  Active
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({ ListingUrl: "", active: true });
-                      setSelectedFile(null);
-                      setPreviewUrl(null);
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isUploading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                  {isUploading && (
-                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <ImageIcon className="w-12 h-12 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload an image
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        Recommended size: 1200x400px
+                      </span>
+                    </div>
                   )}
-                  {editingId ? "Update Banner" : "Add Banner"}
-                </button>
+                  <input
+                    id="banner-upload"
+                    name="banner-upload"
+                    type="file"
+                    className="sr-only"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </label>
               </div>
-            </form>
-          )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="listingUrl"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Link URL (optional)
+              </label>
+              <input
+                type="url"
+                id="listingUrl"
+                name="listingUrl"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="https://example.com/promotion"
+                value={formData.ListingUrl}
+                onChange={(e) =>
+                  setFormData({ ...formData, ListingUrl: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="active"
+                name="active"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={formData.active}
+                onChange={(e) =>
+                  setFormData({ ...formData, active: e.target.checked })
+                }
+                disabled={activeBannerLimitReached && !editingId}
+              />
+              <label
+                htmlFor="active"
+                className="ml-2 block text-sm text-gray-700"
+              >
+                Active
+                {activeBannerLimitReached && !editingId && (
+                  <span className="text-xs text-gray-500 ml-1">
+                    (Only one active banner allowed)
+                  </span>
+                )}
+              </label>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingId(null);
+                    setFormData({ ListingUrl: "", active: true });
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {isUploading && (
+                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                )}
+                {editingId ? "Update Banner" : "Add Banner"}
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Banners List */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">
-              Current Banner
+              Current Banners
             </h2>
           </div>
           {loading ? (
@@ -412,8 +446,15 @@ export default function BannerManagementPage() {
                             ? "bg-gray-100 text-gray-800 hover:bg-gray-200"
                             : "bg-green-100 text-green-800 hover:bg-green-200"
                         }`}
+                        disabled={!banner.active && activeBannerLimitReached}
                       >
                         {banner.active ? "Deactivate" : "Activate"}
+                        {!banner.active && activeBannerLimitReached && (
+                          <span className="sr-only">
+                            {" "}
+                            (Another banner is already active)
+                          </span>
+                        )}
                       </button>
                       <button
                         onClick={() => handleEdit(banner)}

@@ -68,7 +68,7 @@ export default function BannerManagementPage() {
         const formData = new FormData();
         formData.append("image", selectedFile);
         const uploadResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/upload`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/upload`,
           formData,
           {
             headers: {
@@ -90,7 +90,7 @@ export default function BannerManagementPage() {
       if (editingId) {
         // Update existing banner
         await axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/${editingId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${editingId}`,
           bannerData,
           {
             withCredentials: true,
@@ -100,7 +100,7 @@ export default function BannerManagementPage() {
       } else {
         // Create new banner
         await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
           bannerData,
           {
             withCredentials: true,
@@ -111,7 +111,7 @@ export default function BannerManagementPage() {
 
       // Refresh banner list
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
         {
           withCredentials: true,
         }
@@ -148,7 +148,7 @@ export default function BannerManagementPage() {
 
     try {
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/${id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${id}`,
         { withCredentials: true }
       );
       setBanners(banners.filter((banner) => banner.id !== id));
@@ -163,7 +163,7 @@ export default function BannerManagementPage() {
   const toggleActive = async (id, currentStatus) => {
     try {
       await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/home-banner/${id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${id}`,
         {
           active: !currentStatus,
         },
