@@ -64,7 +64,6 @@ export default function OfferZoneSection() {
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/offer-zone`
         );
         if (!response.ok) {
-          throw new Error("Failed to fetch offers");
         }
         const data = await response.json();
 
@@ -95,7 +94,6 @@ export default function OfferZoneSection() {
         );
 
         if (!response.ok) {
-          throw new Error("Auth check failed");
         }
 
         const data = await response.json();
