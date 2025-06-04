@@ -64,6 +64,7 @@ export default function OfferZoneSection() {
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/offer-zone`
         );
         if (!response.ok) {
+          throw new Error("Failed to fetch offers");
         }
         const data = await response.json();
 
@@ -280,7 +281,7 @@ export default function OfferZoneSection() {
     </div>
   );
 
-  if (isLoading) {
+  if (isLoading || offers.length === 0) {
     return (
       <div className="py-24 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-6xl mx-auto">
@@ -341,7 +342,7 @@ export default function OfferZoneSection() {
           <div className="text-center mt-8">
             <button
               onClick={() => setShowMore(!showMore)}
-              className="inline-flex items-center gap-2 bg-[#186667] text-white px-6 py-3 rounded-full font-semibold shadow-sm hover:shadow-lg transform hover:scale-105 transition-all duration-300 hover:bg-[#186667]/90 cursor-pointer"
+              className="inline-flex items-center gap-2 bg-[#186667] text-white px-6 py-3 rounded-full font-semibold shadow-sm hover:shadow-lg transform hover:scale-105 transition-all duration-300 hover:bg-[#186667]/90"
             >
               {showMore ? (
                 <>
