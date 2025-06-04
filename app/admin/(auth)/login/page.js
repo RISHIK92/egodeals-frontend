@@ -187,7 +187,7 @@ export default function AdminLogin() {
             </div>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
               <Link
@@ -197,7 +197,7 @@ export default function AdminLogin() {
                 Register now
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
