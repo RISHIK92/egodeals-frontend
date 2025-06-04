@@ -315,7 +315,9 @@ export default function Navbar() {
           )}
           <button
             className="hidden md:flex bg-gradient-to-r from-[#186667] to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-5 py-2.5 rounded-full items-center cursor-pointer shadow-sm hover:shadow transition-all duration-200"
-            onClick={() => router.push("/create-listing")}
+            onClick={() =>
+              router.push(isLoggedIn ? "/create-listing" : "/login")
+            }
           >
             <Edit className="h-4 w-4 mr-2" />
             List your business
