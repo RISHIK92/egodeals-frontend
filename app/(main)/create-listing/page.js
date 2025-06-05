@@ -244,18 +244,26 @@ export default function CreateListing() {
 
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      toast.error("No files selected");
+      return;
+    }
 
+    // Reset file input to allow selecting same files again
+    e.target.value = "";
+
+    // Validate file types and sizes
     const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    const maxSize = 5 * 1024 * 1024; // 5MB
     const invalidFiles = files.filter(
-      (file) => !validTypes.includes(file.type)
+      (file) => !validTypes.includes(file.type) || file.size > maxSize
     );
 
     if (invalidFiles.length > 0) {
       toast.error(
-        `Invalid file type: ${invalidFiles
-          .map((f) => f.name)
-          .join(", ")}. Please upload JPEG, PNG, or WebP images.`
+        `Invalid files: ${invalidFiles
+          .map((f) => `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)}MB)`)
+          .join(", ")}. Please upload JPEG/PNG/WebP under 5MB.`
       );
       return;
     }
@@ -269,14 +277,15 @@ export default function CreateListing() {
     try {
       const newPhotos = files.map((file) => ({
         file,
-        isBanner: false,
+        isBanner: formData.photos.length === 0, // Set first photo as banner by default
+        preview: URL.createObjectURL(file),
       }));
 
       setFormData((prev) => ({
         ...prev,
         photos: [...prev.photos, ...newPhotos],
       }));
-      toast.success("Photos uploaded successfully!");
+      toast.success(`${files.length} photo(s) uploaded successfully!`);
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Failed to process images");
@@ -299,34 +308,34 @@ export default function CreateListing() {
 
     try {
       // 1. Upload photos if any
-      // let uploadedPhotoUrls = [];
-      // if (formData.photos.length > 0) {
-      //   const uploadFormData = new FormData();
-      //   formData.photos.forEach((photo) => {
-      //     uploadFormData.append("photos", photo.file);
-      //   });
+      let uploadedPhotoUrls = [];
+      if (formData.photos.length > 0) {
+        const uploadFormData = new FormData();
+        formData.photos.forEach((photo) => {
+          uploadFormData.append("photos", photo.file);
+        });
 
-      //   const bannerIndex = formData.photos.findIndex(
-      //     (photo) => photo.isBanner
-      //   );
-      //   uploadFormData.append("bannerIndex", bannerIndex.toString());
+        const bannerIndex = formData.photos.findIndex(
+          (photo) => photo.isBanner
+        );
+        uploadFormData.append("bannerIndex", bannerIndex.toString());
 
-      //   const uploadResponse = await fetch(
-      //     `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
-      //     {
-      //       method: "POST",
-      //       body: uploadFormData,
-      //       credentials: "include",
-      //     }
-      //   );
+        const uploadResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
+          {
+            method: "POST",
+            body: uploadFormData,
+            credentials: "include",
+          }
+        );
 
-      //   if (!uploadResponse.ok) {
-      //     throw new Error("Photo upload failed");
-      //   }
+        if (!uploadResponse.ok) {
+          throw new Error("Photo upload failed");
+        }
 
-      //   const uploadData = await uploadResponse.json();
-      //   uploadedPhotoUrls = uploadData.urls;
-      // }
+        const uploadData = await uploadResponse.json();
+        uploadedPhotoUrls = uploadData.urls;
+      }
 
       // 2. Get selected subscription plan
       const selectedPlan = subscriptionPlans.find(
@@ -361,7 +370,7 @@ export default function CreateListing() {
         rating: formData.rating,
         reviewCount: formData.reviewCount,
         subscriptionId: selectedPlan.id,
-        // photos: uploadedPhotoUrls,
+        photos: uploadedPhotoUrls,
         youtubeVideo: formData.youtubeVideo,
         locationUrl: formData.locationUrl,
         serviceRadius: formData.serviceRadius,

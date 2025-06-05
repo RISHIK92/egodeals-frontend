@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { X } from "lucide-react";
 import { BannerSkeleton } from "../FullWidthBanner/BannerSkeleton";
+import { useRouter } from "next/navigation";
 
 const STORAGE_KEY = "popupBannerShown";
 const SHOW_DELAY = 1500;
@@ -15,6 +16,7 @@ export default function PopupBannerModal() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [error, setError] = useState(null);
+  const router = useRouter();
 
   const modalRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -181,7 +183,12 @@ export default function PopupBannerModal() {
         </button>
 
         {/* Banner content */}
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+        <div
+          className={`w-full h-full flex items-center justify-center bg-gray-100 ${
+            firstBanner.ListingUrl ? "cursor-pointer" : ""
+          }`}
+          onClick={() => router.push(`${firstBanner.ListingUrl}`)}
+        >
           {!imageLoaded && (
             <div className="absolute inset-0 flex items-center justify-center">
               <BannerSkeleton />
