@@ -51,7 +51,7 @@ const renderIcon = (iconName, className = "h-5 w-5") => {
   if (!iconName) return <Briefcase className={className} />;
 
   const IconComponent = LucideIcons[iconName];
-  if (!IconComponent || typeof IconComponent !== "function") {
+  if (!IconComponent) {
     return <Briefcase className={className} />;
   }
 
