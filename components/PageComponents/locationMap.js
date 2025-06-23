@@ -136,17 +136,8 @@ export default function LocationMap({ locationUrl }) {
       <div className="space-y-2 mb-4">
         {state.data.address && (
           <div className="flex">
-            <span className="text-gray-500 text-sm w-20">Address:</span>
+            <span className="text-gray-500 text-sm w-16">Address:</span>
             <span className="text-sm flex-1">{state.data.address}</span>
-          </div>
-        )}
-        {state.data.coordinates && (
-          <div className="flex">
-            <span className="text-gray-500 text-sm w-20">Coordinates:</span>
-            <span className="text-sm flex-1">
-              {state.data.coordinates.lat.toFixed(6)},{" "}
-              {state.data.coordinates.lng.toFixed(6)}
-            </span>
           </div>
         )}
       </div>

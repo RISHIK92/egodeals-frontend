@@ -20,12 +20,14 @@ import { toast } from "react-hot-toast";
 export default function BannerManagementPage() {
   const router = useRouter();
   const [banners, setBanners] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [mediaType, setMediaType] = useState("image"); // 'image' or 'youtube'
   const [formData, setFormData] = useState({
+    categoryId: "",
     youtubeUrl: "",
     ListingUrl: "",
     pincode: "",
@@ -35,26 +37,30 @@ export default function BannerManagementPage() {
   });
   const [editingId, setEditingId] = useState(null);
   const [dimensionError, setDimensionError] = useState(null);
-  const bannerType = "admin-banners";
+  const bannerType = "category-banners";
 
-  // Fetch all banners
+  // Fetch all banners and categories
   useEffect(() => {
-    const fetchBanners = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
-          {}
-        );
-        setBanners(response.data);
+        const [bannersResponse, categoriesResponse] = await Promise.all([
+          axios.get(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners`
+          ),
+          axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/categories`),
+        ]);
+
+        setBanners(bannersResponse.data);
+        setCategories(categoriesResponse.data);
       } catch (error) {
-        console.error("Failed to fetch banners:", error);
-        toast.error("Failed to load banners");
+        console.error("Failed to fetch data:", error);
+        toast.error("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBanners();
+    fetchData();
   }, []);
 
   // Handle file selection with dimension validation
@@ -104,6 +110,14 @@ export default function BannerManagementPage() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  // Extract YouTube ID from URL
+  const extractYouTubeId = (url) => {
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
   // Create or update banner
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,6 +142,11 @@ export default function BannerManagementPage() {
     }
 
     try {
+      if (!formData.categoryId) {
+        toast.error("Please select a category");
+        return;
+      }
+
       // Validate media selection
       if (mediaType === "image" && !selectedFile && !editingId) {
         toast.error("Please select an image");
@@ -151,7 +170,7 @@ export default function BannerManagementPage() {
         const uploadFormData = new FormData();
         uploadFormData.append("image", selectedFile);
         const uploadResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/upload`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners/upload`,
           uploadFormData,
           {
             headers: {
@@ -171,6 +190,7 @@ export default function BannerManagementPage() {
       const bannerData = {
         Image: imageUrl,
         youtubeUrl: youtubeUrl,
+        categoryId: formData.categoryId,
         ListingUrl: formData.ListingUrl,
         pincode: formData.pincode ? parseInt(formData.pincode) : null,
         locationUrl: formData.locationUrl,
@@ -183,7 +203,7 @@ export default function BannerManagementPage() {
       if (editingId) {
         // Update existing banner
         await axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${editingId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners/${editingId}`,
           bannerData,
           {
             withCredentials: true,
@@ -193,7 +213,7 @@ export default function BannerManagementPage() {
       } else {
         // Create new banner
         await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners`,
           bannerData,
           {
             withCredentials: true,
@@ -204,7 +224,7 @@ export default function BannerManagementPage() {
 
       // Refresh banner list
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners`,
         {
           withCredentials: true,
         }
@@ -213,6 +233,7 @@ export default function BannerManagementPage() {
 
       // Reset form
       setFormData({
+        categoryId: "",
         youtubeUrl: "",
         ListingUrl: "",
         pincode: "",
@@ -237,6 +258,7 @@ export default function BannerManagementPage() {
   const handleEdit = (banner) => {
     setEditingId(banner.id);
     setFormData({
+      categoryId: banner.categoryId,
       youtubeUrl: banner.youtubeUrl || "",
       ListingUrl: banner.ListingUrl || "",
       pincode: banner.pincode ? banner.pincode.toString() : "",
@@ -261,21 +283,13 @@ export default function BannerManagementPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Extract YouTube ID from URL
-  const extractYouTubeId = (url) => {
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-  };
-
   // Delete banner
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this banner?")) return;
 
     try {
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/category-banners/${id}`,
         { withCredentials: true }
       );
       setBanners(banners.filter((banner) => banner.id !== id));
@@ -318,7 +332,7 @@ export default function BannerManagementPage() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            admin Banners Management
+            Category Banners Management
           </h1>
           <p className="text-gray-600">Manage your home page banners</p>
         </div>
@@ -329,6 +343,28 @@ export default function BannerManagementPage() {
             {editingId ? "Edit Banner" : "Add New Banner"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Category Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category *
+              </label>
+              <select
+                value={formData.categoryId}
+                onChange={(e) =>
+                  setFormData({ ...formData, categoryId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Media Type Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -568,6 +604,7 @@ export default function BannerManagementPage() {
                   onClick={() => {
                     setEditingId(null);
                     setFormData({
+                      categoryId: "",
                       youtubeUrl: "",
                       ListingUrl: "",
                       pincode: "",
@@ -647,6 +684,16 @@ export default function BannerManagementPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 mb-1">
+                            Category
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {categories.find((c) => c.id === banner.categoryId)
+                              ?.name || "Unknown"}
+                          </p>
+                        </div>
+
                         <div>
                           <p className="text-sm font-medium text-gray-900 mb-1">
                             Media Type

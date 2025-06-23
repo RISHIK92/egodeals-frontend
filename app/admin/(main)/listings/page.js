@@ -11,8 +11,11 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Plus,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
+import EditListingModal from "./components/editListingModal";
 
 const ListingsPage = ({ defaultStatus = "" }) => {
   const router = useRouter();
@@ -23,12 +26,24 @@ const ListingsPage = ({ defaultStatus = "" }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState(defaultStatus);
+
+  const handleListingCreated = (newListing) => {
+    setListings((prev) => [newListing, ...prev]);
+    setTotalListings((prev) => prev + 1);
+  };
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState(null);
 
   useEffect(() => {
     const fetchListings = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
+
         const params = new URLSearchParams({
           page: currentPage,
           limit: 10,
@@ -44,6 +59,7 @@ const ListingsPage = ({ defaultStatus = "" }) => {
         );
 
         if (!response.ok) {
+          throw new Error(`Failed to fetch listings: ${response.status}`);
         }
 
         const data = await response.json();
@@ -52,6 +68,8 @@ const ListingsPage = ({ defaultStatus = "" }) => {
         setTotalPages(data.totalPages);
       } catch (error) {
         console.error("Listings error:", error);
+        setError(error.message);
+        toast.error("Failed to load listings");
       } finally {
         setIsLoading(false);
       }
@@ -84,15 +102,13 @@ const ListingsPage = ({ defaultStatus = "" }) => {
 
       if (!response.ok) throw new Error("Failed to approve listing");
 
-      // Update the local state to reflect the change
       setListings((prevListings) =>
         prevListings.map((listing) =>
           listing.id === id ? { ...listing, status: "APPROVED" } : listing
         )
       );
 
-      // If we're on the pending page, remove the listing from view
-      if (statusFilter === "PENDING") {
+      if (statusFilter === "PENDING_APPROVAL") {
         setListings((prevListings) =>
           prevListings.filter((listing) => listing.id !== id)
         );
@@ -118,15 +134,13 @@ const ListingsPage = ({ defaultStatus = "" }) => {
 
       if (!response.ok) throw new Error("Failed to reject listing");
 
-      // Update the local state to reflect the change
       setListings((prevListings) =>
         prevListings.map((listing) =>
           listing.id === id ? { ...listing, status: "REJECTED" } : listing
         )
       );
 
-      // If we're on the pending page, remove the listing from view
-      if (statusFilter === "PENDING") {
+      if (statusFilter === "PENDING_APPROVAL") {
         setListings((prevListings) =>
           prevListings.filter((listing) => listing.id !== id)
         );
@@ -152,7 +166,6 @@ const ListingsPage = ({ defaultStatus = "" }) => {
 
       if (!response.ok) throw new Error("Free Tier cannot be Promoted");
 
-      // Update promotions in the local state
       setListings((prevListings) =>
         prevListings.map((listing) => {
           if (listing.id === id) {
@@ -193,15 +206,33 @@ const ListingsPage = ({ defaultStatus = "" }) => {
 
       if (!response.ok) throw new Error("Failed to delete listing");
 
-      // Remove from local state
       setListings((prevListings) =>
         prevListings.filter((listing) => listing.id !== id)
       );
       setTotalListings((prev) => prev - 1);
+      toast.success("Listing deleted successfully");
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete listing");
     }
+  };
+
+  const handleEdit = (listing) => {
+    setSelectedListing(listing);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditUpdate = (updatedListing) => {
+    setListings((prevListings) =>
+      prevListings.map((listing) =>
+        listing.id === updatedListing.id ? updatedListing : listing
+      )
+    );
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedListing(null);
   };
 
   const ListingTypeBadge = ({ type }) => {
@@ -248,11 +279,19 @@ const ListingsPage = ({ defaultStatus = "" }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">
-          {statusFilter === "PENDING"
+          {statusFilter === "PENDING_APPROVAL"
             ? "Pending Listings"
             : statusFilter === "APPROVED"
             ? "Approved Listings"
@@ -262,7 +301,8 @@ const ListingsPage = ({ defaultStatus = "" }) => {
         </h1>
         {statusFilter && (
           <span className="text-sm text-gray-500">
-            {totalListings} {statusFilter.toLowerCase()} listings
+            {totalListings} {statusFilter.toLowerCase().replace("_", " ")}{" "}
+            listings
           </span>
         )}
       </div>
@@ -270,7 +310,8 @@ const ListingsPage = ({ defaultStatus = "" }) => {
       <div className="bg-white rounded-lg shadow">
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* <form onSubmit={handleSearch} className="flex w-full max-w-lg">
+            {/* Search form can be uncommented if needed
+            <form onSubmit={handleSearch} className="flex w-full max-w-lg">
               <input
                 type="text"
                 className="px-4 py-2 w-full rounded-l-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -284,7 +325,8 @@ const ListingsPage = ({ defaultStatus = "" }) => {
               >
                 <Search className="w-5 h-5" />
               </button>
-            </form> */}
+            </form>
+            */}
           </div>
         </div>
 
@@ -388,6 +430,14 @@ const ListingsPage = ({ defaultStatus = "" }) => {
                           <Eye className="w-5 h-5" />
                         </button>
 
+                        <button
+                          onClick={() => handleEdit(listing)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title="Edit listing"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+
                         {listing.status === "PENDING_APPROVAL" && (
                           <>
                             <button
@@ -444,7 +494,7 @@ const ListingsPage = ({ defaultStatus = "" }) => {
               ) : (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No listings found
@@ -540,6 +590,14 @@ const ListingsPage = ({ defaultStatus = "" }) => {
           </div>
         )}
       </div>
+
+      <EditListingModal
+        listing={selectedListing}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onUpdate={handleEditUpdate}
+      />
+
       <ToastContainer
         position="top-right"
         autoClose={5000}

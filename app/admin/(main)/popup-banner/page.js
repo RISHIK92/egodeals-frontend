@@ -290,7 +290,7 @@ export default function BannerManagementPage() {
                         className="max-h-48 rounded-md object-contain"
                       />
                       <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                        <span className="text-black opacity-0 group-hover:opacity-100">
+                        <span className="text-yellow-600 font-bold opacity-0 group-hover:opacity-100">
                           Change Image
                         </span>
                       </div>
@@ -302,7 +302,7 @@ export default function BannerManagementPage() {
                         Click to upload an image
                       </span>
                       <span className="text-xs text-gray-500 mt-1">
-                        Recommended size: 1200x400px
+                        Recommended size: 1200x500px
                       </span>
                     </div>
                   )}

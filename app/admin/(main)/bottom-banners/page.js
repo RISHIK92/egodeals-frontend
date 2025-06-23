@@ -35,14 +35,14 @@ export default function BannerManagementPage() {
   });
   const [editingId, setEditingId] = useState(null);
   const [dimensionError, setDimensionError] = useState(null);
-  const bannerType = "admin-banners";
+  const bannerType = "bottom-banners";
 
   // Fetch all banners
   useEffect(() => {
     const fetchBanners = async () => {
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners`,
           {}
         );
         setBanners(response.data);
@@ -151,7 +151,7 @@ export default function BannerManagementPage() {
         const uploadFormData = new FormData();
         uploadFormData.append("image", selectedFile);
         const uploadResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/upload`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners/upload`,
           uploadFormData,
           {
             headers: {
@@ -183,7 +183,7 @@ export default function BannerManagementPage() {
       if (editingId) {
         // Update existing banner
         await axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${editingId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners/${editingId}`,
           bannerData,
           {
             withCredentials: true,
@@ -193,7 +193,7 @@ export default function BannerManagementPage() {
       } else {
         // Create new banner
         await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners`,
           bannerData,
           {
             withCredentials: true,
@@ -204,7 +204,7 @@ export default function BannerManagementPage() {
 
       // Refresh banner list
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners`,
         {
           withCredentials: true,
         }
@@ -275,7 +275,7 @@ export default function BannerManagementPage() {
 
     try {
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/admin-banners/${id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL_ADMIN}/bottom-banners/${id}`,
         { withCredentials: true }
       );
       setBanners(banners.filter((banner) => banner.id !== id));
@@ -318,7 +318,7 @@ export default function BannerManagementPage() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            admin Banners Management
+            Bottom Banners Management
           </h1>
           <p className="text-gray-600">Manage your home page banners</p>
         </div>

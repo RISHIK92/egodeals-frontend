@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BannerSkeleton } from "./BannerSkeleton";
 
-export default function Banner({ staticImage }) {
+export default function BottomBanner({ staticImage }) {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [banners, setBanners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,7 +53,7 @@ export default function Banner({ staticImage }) {
     const fetchBanners = async () => {
       try {
         const url = userLocation
-          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners?location=${userLocation}`
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/bottom-banners?location=${userLocation}`
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/hero-banners`;
 
         const response = await fetch(url);

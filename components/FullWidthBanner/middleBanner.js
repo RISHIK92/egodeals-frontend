@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BannerSkeleton } from "./BannerSkeleton";
 
-export default function Banner({ staticImage }) {
+export default function MiddleBanner({ staticImage }) {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [banners, setBanners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,8 +53,8 @@ export default function Banner({ staticImage }) {
     const fetchBanners = async () => {
       try {
         const url = userLocation
-          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners?location=${userLocation}`
-          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/hero-banners`;
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/middle-banners?location=${userLocation}`
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -175,9 +175,9 @@ export default function Banner({ staticImage }) {
             style={{ paddingBottom: "33.34%", height: 0 }}
           >
             <iframe
-              className="absolute top-0 left-0 w-full h-[500px]"
+              className="w-full h-full"
               src={getYouTubeEmbedUrl(youtubeVideoId)}
-              title={currentBanner?.title || "YouTube video"}
+              title={banner?.title || "YouTube video"}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen

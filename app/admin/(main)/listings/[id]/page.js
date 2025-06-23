@@ -209,10 +209,7 @@ const ListingDetailPage = () => {
     if (!listing?.businessHours) return null;
 
     try {
-      const hours =
-        typeof listing.businessHours === "string"
-          ? JSON.parse(listing.businessHours)
-          : listing.businessHours;
+      const hours = listing.businessHours;
 
       const days = [
         { key: "weekdays", label: "Weekdays" },
@@ -419,6 +416,12 @@ const ListingDetailPage = () => {
           ) : (
             "N/A"
           )}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Pincode</p>
+        <p className="text-sm font-medium text-gray-900">
+          {listing.pincode ? listing.pincode : "N/A"}
         </p>
       </div>
       <div>

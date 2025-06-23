@@ -1,12 +1,13 @@
 "use client";
 import { Suspense } from "react";
 import ProfessionalListings from "./proffesionalListing";
-import FullWidthBanner from "@/components/FullWidthBanner/fullWidthBanner";
+import MiddleBanner from "@/components/FullWidthBanner/middleBanner";
+import CategoryBanner from "@/components/FullWidthBanner/categoryBanner";
 
 export default function BusinessesWrapper() {
   return (
     <>
-      <FullWidthBanner />
+      <CategoryBanner />
       <Suspense fallback={<div>Loading...</div>}>
         <ProfessionalListings />
       </Suspense>

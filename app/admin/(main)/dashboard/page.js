@@ -106,6 +106,7 @@ export const Sidebar = ({ adminData }) => {
       hasSubmenu: true,
       submenu: "listings",
       submenuItems: [
+        { href: "/admin/listings/create-listing", label: "Create Listing" },
         { href: "/admin/listings", label: "All Listings" },
         { href: "/admin/listings/pending", label: "Pending Approval" },
         { href: "/admin/listings/approved", label: "Approved" },
@@ -177,6 +178,9 @@ export const Sidebar = ({ adminData }) => {
       submenuItems: [
         { href: "/admin/popup-banner", label: "Popup Banner" },
         { href: "/admin/hero-banners", label: "Hero Banners" },
+        { href: "/admin/middle-banners", label: "Middle Banners" },
+        { href: "/admin/bottom-banners", label: "Bottom Banners" },
+        { href: "/admin/category-banners", label: "Category Banners" },
       ],
       permission: null,
     },

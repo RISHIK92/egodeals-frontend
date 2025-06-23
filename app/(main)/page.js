@@ -7,20 +7,22 @@ import RandomListingsSection from "@/components/CategorySection/randomSection";
 import OfferZoneSection from "@/components/CategorySection/offerZone";
 import AdminFullWidthBanner from "@/components/AdminBanner/adminFullWidthBanner";
 import PopupBannerModal from "@/components/AdminBanner/PopupBanner";
+import MiddleBanner from "@/components/FullWidthBanner/middleBanner";
+import BottomBanner from "@/components/FullWidthBanner/bottomBanner";
 
 export default function Home() {
   return (
     <>
       {/* <Navbar /> */}
       <HeroSection />
-      <FullWidthBanner />
+      <MiddleBanner />
       {/* <FullWidthBanner
       // image={"https://egodeals.com/data/banners/1737541263.png"}
       /> */}
       <PopupBannerModal />
       <OfferZoneSection />
       <CategorySection />
-      <FullWidthBanner />
+      <BottomBanner />
       <RandomListingsSection />
     </>
   );

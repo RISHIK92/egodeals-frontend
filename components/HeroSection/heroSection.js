@@ -55,6 +55,21 @@ export default function HeroSection() {
   const [isAutoSliding, setIsAutoSliding] = useState(true);
   const bannerIntervalRef = useRef(null);
 
+  // Helper function to extract YouTube video ID from URL
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+
+    const regExp =
+      /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[7].length === 11 ? match[7] : null;
+  };
+
+  // Helper function to get YouTube embed URL with autoplay
+  const getYouTubeEmbedUrl = (videoId) => {
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&modestbranding=1`;
+  };
+
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
@@ -76,14 +91,18 @@ export default function HeroSection() {
     fetchCategories();
   }, []);
 
-  // Fetch banners from API if needed
   useEffect(() => {
+    const userLocation =
+      typeof window !== "undefined"
+        ? localStorage.getItem("userLocation")
+        : null;
+
     const fetchBanners = async () => {
       try {
         if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin-banners`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/hero-banners?location=${userLocation}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -276,34 +295,46 @@ export default function HeroSection() {
 
   return (
     <div className="relative w-full h-[650px] bg-gray-100 overflow-hidden">
-      {/* Custom Banner Slider */}
       <div className="relative w-full h-full">
-        {/* Banner Images */}
         <div className="relative w-full h-full overflow-hidden">
-          {banners.map((banner, index) => (
-            <div
-              key={banner.id}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
-                index === currentBannerIndex ? "opacity-100" : "opacity-0"
-              } ${banner.ListingUrl ? "cursor-pointer" : ""}`}
-              onClick={() => handleBannerImageClick(banner)}
-            >
-              <img
-                src={banner.Image || "/placeholder.svg"}
-                alt={banner.alt}
-                className="w-full h-full object-contain"
-                loading={index === 0 ? "eager" : "lazy"}
-                onError={(e) => {
-                  e.target.src = "/placeholder.svg?height=650&width=1200";
-                }}
-              />
-              {/* Overlay for better text readability */}
-              <div className="absolute inset-0" />
-            </div>
-          ))}
+          {banners.map((banner, index) => {
+            const youtubeVideoId = getYouTubeVideoId(banner?.youtubeUrl);
+
+            return (
+              <div
+                key={banner.id}
+                className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
+                  index === currentBannerIndex ? "opacity-100" : "opacity-0"
+                } ${banner.ListingUrl ? "cursor-pointer" : ""}`}
+                onClick={() => handleBannerImageClick(banner)}
+              >
+                {youtubeVideoId ? (
+                  // YouTube Video Embed
+                  <div className="w-full h-full overflow-hidden">
+                    <iframe
+                      className="w-full h-full"
+                      src={getYouTubeEmbedUrl(youtubeVideoId)}
+                      title={banner?.title || "YouTube video"}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  // Regular Image
+                  <img
+                    src={banner.imageUrl || "/placeholder.svg"}
+                    alt={banner.alt}
+                    className="w-full h-full object-contain"
+                    loading={index === 0 ? "eager" : "lazy"}
+                  />
+                )}
+                <div className="absolute inset-0" />
+              </div>
+            );
+          })}
         </div>
 
-        {/* Navigation Arrows - Only show if more than 1 banner */}
         {banners.length > 1 && (
           <>
             <button
@@ -323,7 +354,6 @@ export default function HeroSection() {
           </>
         )}
 
-        {/* Pagination Indicators - Only show if more than 1 banner */}
         {banners.length > 1 && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex space-x-2">
             {banners.map((_, index) => (

@@ -59,6 +59,7 @@ export default function CreateListing() {
     reviewCount: "",
     youtubeVideo: "",
     locationUrl: "",
+    pincode: "",
     serviceRadius: null,
   });
 
@@ -78,6 +79,7 @@ export default function CreateListing() {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [createdListingId, setCreatedListingId] = useState(null);
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [imageUploadType, setImageUploadType] = useState("featured");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,13 +128,22 @@ export default function CreateListing() {
     city.toLowerCase().includes(cityFilter.toLowerCase())
   );
 
-  const toggleBanner = (index) => {
-    setFormData((prev) => {
-      const newPhotos = prev.photos.map((photo, i) => ({
-        ...photo,
-        isBanner: i === index,
-      }));
-      return { ...prev, photos: newPhotos };
+  const validateImageDimensions = (file) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        resolve({
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          isValidBanner: img.naturalWidth === 1500 && img.naturalHeight === 500,
+        });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        reject(new Error("Failed to load image"));
+      };
+      img.src = URL.createObjectURL(file);
     });
   };
 
@@ -242,14 +253,14 @@ export default function CreateListing() {
     }));
   };
 
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoUpload = async (e, type = "gallery") => {
     const files = Array.from(e.target.files);
     if (!files || files.length === 0) {
       toast.error("No files selected");
       return;
     }
 
-    // Reset file input to allow selecting same files again
+    // Reset file input
     e.target.value = "";
 
     // Validate file types and sizes
@@ -268,24 +279,92 @@ export default function CreateListing() {
       return;
     }
 
-    if (files.length + formData.photos.length > 5) {
-      toast.error("You can upload maximum 5 photos");
+    // Check type-specific limits
+    const currentTypeCount = formData.photos.filter(
+      (p) => p.type === type
+    ).length;
+    let maxAllowed;
+
+    switch (type) {
+      case "featured":
+        maxAllowed = 1;
+        break;
+      case "gallery":
+        maxAllowed = 8;
+        break;
+      default:
+        maxAllowed = 8;
+    }
+
+    if (files.length + currentTypeCount > maxAllowed) {
+      toast.error(`You can upload maximum ${maxAllowed} ${type} image(s)`);
+      return;
+    }
+
+    if (formData.photos.length + files.length > 10) {
+      toast.error("You can upload maximum 10 photos in total");
       return;
     }
 
     setIsLoading(true);
     try {
-      const newPhotos = files.map((file) => ({
-        file,
-        isBanner: formData.photos.length === 0, // Set first photo as banner by default
-        preview: URL.createObjectURL(file),
-      }));
+      const newPhotos = [];
+      const dimensionErrors = [];
 
-      setFormData((prev) => ({
-        ...prev,
-        photos: [...prev.photos, ...newPhotos],
-      }));
-      toast.success(`${files.length} photo(s) uploaded successfully!`);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const dimensions = await validateImageDimensions(file);
+
+          // Validate dimensions based on type
+          let isValidDimensions = true;
+          let dimensionError = "";
+
+          if (type === "featured") {
+            // Recommend but don't enforce specific dimensions for featured images
+            if (dimensions.width < 800 || dimensions.height < 600) {
+              toast.warning(
+                `Featured image is quite small (${dimensions.width}x${dimensions.height}). Consider using at least 1200x800px for better quality.`
+              );
+            }
+          }
+
+          if (!isValidDimensions) {
+            dimensionErrors.push(`${file.name}: ${dimensionError}`);
+            continue;
+          }
+
+          newPhotos.push({
+            id: Date.now() + Math.random(), // Unique ID for each photo
+            file,
+            type,
+            preview: URL.createObjectURL(file),
+            dimensions: dimensions,
+          });
+        } catch (error) {
+          dimensionErrors.push(
+            `${file.name}: Failed to validate image dimensions`
+          );
+        }
+      }
+
+      if (dimensionErrors.length > 0) {
+        toast.error(dimensionErrors.join("; "));
+        if (newPhotos.length === 0) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      if (newPhotos.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          photos: [...prev.photos, ...newPhotos],
+        }));
+        toast.success(
+          `${newPhotos.length} ${type} image(s) uploaded successfully!`
+        );
+      }
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Failed to process images");
@@ -294,11 +373,12 @@ export default function CreateListing() {
     }
   };
 
-  const removePhoto = (index) => {
+  const removePhoto = (photoId) => {
     setFormData((prev) => {
-      const newPhotos = prev.photos.filter((_, i) => i !== index);
+      const newPhotos = prev.photos.filter((photo) => photo.id !== photoId);
       return { ...prev, photos: newPhotos };
     });
+    toast.success("Image removed successfully");
   };
 
   const handleSubmit = async (e) => {
@@ -307,18 +387,40 @@ export default function CreateListing() {
     setError("");
 
     try {
+      const featuredImages = formData.photos.filter(
+        (photo) => photo.type === "featured"
+      );
+      if (featuredImages.length === 0) {
+        toast.error("At least one featured image is required");
+        setIsLoading(false);
+        return;
+      }
+
       // 1. Upload photos if any
       let uploadedPhotoUrls = [];
       if (formData.photos.length > 0) {
         const uploadFormData = new FormData();
-        formData.photos.forEach((photo) => {
+
+        // Group photos by type for organized upload
+        const photosByType = {
+          featured: formData.photos.filter((p) => p.type === "featured"),
+          gallery: formData.photos.filter((p) => p.type === "gallery"),
+        };
+
+        // Append files with type information
+        formData.photos.forEach((photo, index) => {
           uploadFormData.append("photos", photo.file);
+          uploadFormData.append(`photoTypes[${index}]`, photo.type);
         });
 
-        const bannerIndex = formData.photos.findIndex(
-          (photo) => photo.isBanner
+        // Send metadata about photo organization
+        uploadFormData.append(
+          "photoMetadata",
+          JSON.stringify({
+            featuredCount: photosByType.featured.length,
+            galleryCount: photosByType.gallery.length,
+          })
         );
-        uploadFormData.append("bannerIndex", bannerIndex.toString());
 
         const uploadResponse = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload`,
@@ -373,6 +475,7 @@ export default function CreateListing() {
         photos: uploadedPhotoUrls,
         youtubeVideo: formData.youtubeVideo,
         locationUrl: formData.locationUrl,
+        pincode: formData.pincode,
         serviceRadius: formData.serviceRadius,
       };
 
@@ -756,7 +859,7 @@ export default function CreateListing() {
               {/* Location URL */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location URL <span className="text-red-500">*</span>
+                  Location URL
                 </label>
                 <input
                   type="url"
@@ -773,41 +876,20 @@ export default function CreateListing() {
                 </p>
               </div>
 
-              {/* Service Radius */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Service Radius
+                  Pincode <span className="text-red-500">*</span>
                 </label>
-                <div className="flex items-center">
-                  <input
-                    type="number"
-                    min="1"
-                    className="w-24 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-                    value={formData.serviceRadius || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        serviceRadius: e.target.value
-                          ? parseInt(e.target.value)
-                          : null,
-                      })
-                    }
-                  />
-                  <span className="ml-2 text-gray-500">kilometers</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, serviceRadius: null })
-                    }
-                    className="ml-4 text-sm text-teal-600 hover:text-teal-900 cursor-pointer"
-                  >
-                    Set no limit
-                  </button>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  How far you're willing to promote your services (leave empty
-                  for no limit)
-                </p>
+                <input
+                  type="url"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  value={formData.pincode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pincode: e.target.value })
+                  }
+                  placeholder="Pincode"
+                />
               </div>
 
               {/* Phone */}
@@ -1204,90 +1286,257 @@ export default function CreateListing() {
             </div>
           </div>
         )}
-
         {currentSection === "images" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
+            {/* Header */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Upload Photos
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Upload Your Images
               </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Upload at least one photo (max 5). The first photo will be
-                featured. Select one as your banner image.
+              <p className="text-sm text-gray-600">
+                Add high-quality images to showcase your listing. Different
+                image types serve different purposes.
               </p>
+            </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {formData.photos.map((photo, index) => (
-                  <div key={index} className="relative group h-40">
-                    <img
-                      src={URL.createObjectURL(photo.file)}
-                      alt={`Preview ${index}`}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2">
-                      <div className="flex justify-between items-center">
-                        {index === 0 && (
-                          <span className="text-xs text-white bg-teal-600 px-2 py-1 rounded">
-                            Featured
-                          </span>
-                        )}
-                        {photo.isBanner && (
-                          <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded">
-                            Banner
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="absolute top-1 right-1 flex flex-col space-y-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleBanner(index);
-                        }}
-                        className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-90"
-                      >
-                        {photo.isBanner ? "Remove Banner" : "Set as Banner"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removePhoto(index);
-                        }}
-                        className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-90"
-                      >
-                        Remove
-                      </button>
-                    </div>
+            {/* Image Type Selector */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-3">
+                Choose Image Type
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-2">
+                    <Camera className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-gray-900">
+                      Featured Image
+                    </span>
                   </div>
-                ))}
+                  <p className="text-sm text-gray-600 mb-3">
+                    Main image shown in search results (1200x800px recommended)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadType("featured")}
+                    className="w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Upload Featured
+                  </button>
+                </div>
 
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-2">
+                    <ImagePlus className="h-5 w-5 text-green-600 mr-2" />
+                    <span className="font-medium text-gray-900">
+                      Gallery Images
+                    </span>
                   </div>
-                ) : (
-                  formData.photos.length < 5 && (
-                    <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <Plus className="h-8 w-8 text-gray-400" />
-                      <span className="mt-2 text-sm text-gray-600">
-                        Add photo
-                      </span>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        ref={fileInputRef}
-                      />
-                    </label>
-                  )
-                )}
+                  <p className="text-sm text-gray-600 mb-3">
+                    Additional photos for detailed view (any size)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadType("gallery")}
+                    className="w-full px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                  >
+                    Upload Gallery
+                  </button>
+                </div>
               </div>
             </div>
 
+            {/* Image Upload Areas */}
+            <div className="space-y-6">
+              {/* Featured Image Section */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium text-gray-900 flex items-center">
+                    <Camera className="h-5 w-5 text-blue-600 mr-2" />
+                    Featured Image
+                    <span className="ml-2 text-sm text-red-500">*</span>
+                  </h4>
+                  <span className="text-sm text-gray-500">
+                    1 image required
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {formData.photos
+                    .filter((photo) => photo.type === "featured")
+                    .map((photo, index) => (
+                      <div key={`featured-${index}`} className="relative group">
+                        <div className="aspect-[3/2] bg-gray-100 rounded-lg overflow-hidden">
+                          <img
+                            src={photo.preview}
+                            alt="Featured"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                            Featured
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <div className="mt-2 text-sm text-gray-600">
+                          {photo.dimensions?.width}x{photo.dimensions?.height}px
+                        </div>
+                      </div>
+                    ))}
+
+                  {formData.photos.filter((photo) => photo.type === "featured")
+                    .length === 0 && (
+                    <label className="aspect-[3/2] border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-gray-50 hover:bg-blue-50">
+                      <Camera className="h-12 w-12 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700 mb-1">
+                        Upload Featured Image
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Recommended: 1200x800px
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handlePhotoUpload(e, "featured")}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Banner Image Section */}
+
+              {/* Gallery Images Section */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium text-gray-900 flex items-center">
+                    <ImagePlus className="h-5 w-5 text-green-600 mr-2" />
+                    Gallery Images
+                  </h4>
+                  <span className="text-sm text-gray-500">
+                    {
+                      formData.photos.filter(
+                        (photo) => photo.type === "gallery"
+                      ).length
+                    }
+                    /8 images
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {formData.photos
+                    .filter((photo) => photo.type === "gallery")
+                    .map((photo, index) => (
+                      <div key={`gallery-${index}`} className="relative group">
+                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                          <img
+                            src={photo.preview}
+                            alt={`Gallery ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
+                            #{index + 1}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                  {formData.photos.filter((photo) => photo.type === "gallery")
+                    .length < 8 && (
+                    <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors bg-gray-50 hover:bg-green-50">
+                      <ImagePlus className="h-8 w-8 text-gray-400 mb-1" />
+                      <span className="text-xs font-medium text-gray-700">
+                        Add Image
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handlePhotoUpload(e, "gallery")}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Image Requirements Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                <Info className="h-5 w-5 mr-2" />
+                Image Requirements & Tips
+              </h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>
+                  • <strong>Featured Image:</strong> Main listing image
+                  (1200x800px recommended, max 5MB)
+                </li>
+                <li>
+                  • <strong>Gallery Images:</strong> Additional detail photos
+                  (any size, max 5MB each)
+                </li>
+                <li>• Supported formats: JPEG, PNG, WebP</li>
+                <li>
+                  • Use high-quality, well-lit images for better visibility
+                </li>
+                <li>• Avoid images with text overlay or watermarks</li>
+              </ul>
+            </div>
+
+            {/* Progress Indicator */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Upload Progress
+                </span>
+                <span className="text-sm text-gray-600">
+                  {formData.photos.length} / 10 images
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-teal-600 h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(
+                      (formData.photos.length / 10) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                Featured:{" "}
+                {formData.photos.filter((p) => p.type === "featured").length > 0
+                  ? "✓"
+                  : "✗"}{" "}
+                | Banner:{" "}
+                {formData.photos.filter((p) => p.type === "banner").length > 0
+                  ? "✓"
+                  : "Optional"}{" "}
+                | Gallery:{" "}
+                {formData.photos.filter((p) => p.type === "gallery").length}{" "}
+                images
+              </div>
+            </div>
+
+            {/* Navigation */}
             <div className="flex justify-between">
               <button
                 type="button"
@@ -1299,7 +1548,10 @@ export default function CreateListing() {
               <button
                 type="button"
                 onClick={() => setCurrentSection("pricing")}
-                disabled={formData.photos.length === 0}
+                disabled={
+                  formData.photos.filter((photo) => photo.type === "featured")
+                    .length === 0
+                }
                 className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue to Pricing
@@ -1307,7 +1559,6 @@ export default function CreateListing() {
             </div>
           </div>
         )}
-
         {currentSection === "pricing" && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
