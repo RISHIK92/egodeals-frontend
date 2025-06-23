@@ -7,8 +7,8 @@ import CategoryBanner from "@/components/FullWidthBanner/categoryBanner";
 export default function BusinessesWrapper() {
   return (
     <>
-      <CategoryBanner />
       <Suspense fallback={<div>Loading...</div>}>
+        <CategoryBanner />
         <ProfessionalListings />
       </Suspense>
     </>
