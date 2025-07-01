@@ -34,19 +34,17 @@ export default function HeroSection() {
   const [banners, setBanners] = useState([
     {
       id: 1,
-      Image: "/placeholder.svg?height=650&width=1200",
-      alt: "Summer Collection",
+      imageUrl: "https://egodeals.com/data/banners/1737541253.jpg",
       ListingUrl: "/listings/summer",
     },
     {
       id: 2,
-      Image: "/placeholder.svg?height=650&width=1200",
-      alt: "New Arrivals",
+      imageUrl: "https://egodeals.com/data/banners/1737541272.jpg",
       ListingUrl: "/listings/new-arrivals",
     },
     {
       id: 3,
-      Image: "/placeholder.svg?height=650&width=1200",
+      imageUrl: "https://egodeals.com/data/banners/1737541253.jpg",
       alt: "Special Offers",
       ListingUrl: "/listings/offers",
     },
@@ -323,7 +321,7 @@ export default function HeroSection() {
                 ) : (
                   // Regular Image
                   <img
-                    src={banner.imageUrl || "/placeholder.svg"}
+                    src={banner.imageUrl || "http.jpg"}
                     alt={banner.alt}
                     className="w-full h-full object-contain"
                     loading={index === 0 ? "eager" : "lazy"}
