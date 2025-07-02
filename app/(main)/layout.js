@@ -158,10 +158,7 @@ function Footer() {
       {/* Bottom copyright bar */}
       <div className="bg-teal-800 text-white py-4">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p>
-            ©2025 egodeals. Website Developed by{" "}
-            <span className="font-semibold">AJS Innovations</span>
-          </p>
+          <p>©2025 egodeals.</p>
         </div>
       </div>
     </div>
